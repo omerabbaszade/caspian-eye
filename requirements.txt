@@ -1,0 +1,12 @@
+numpy
+scipy
+pillow
+rasterio
+pyproj
+shapely
+pystac-client
+planetary-computer
+h5py
+fsspec
+aiohttp
+requests

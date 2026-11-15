@@ -1,0 +1,13 @@
+# Large rasters and temporary files stay out of the repository
+s1/
+s2/
+nisar_gcov/
+nisar_browse/raw/
+scripts/dev/
+__pycache__/
+*.bak*
+*.part
+*.log
+media/*.mp4
+.earthdata_token
+media/*.wav

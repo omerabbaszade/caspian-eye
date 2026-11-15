@@ -1,0 +1,5 @@
+[
+ {"id":"A","label":"A · Flooding","name":"Kura River mouth","coords":[[49.24,39.42],[49.50,39.42],[49.50,39.20],[49.24,39.20],[49.24,39.42]]},
+ {"id":"B","label":"B · Wetland","name":"Qızılağac (Gizilagaj) Bay","coords":[[48.86,39.22],[49.12,39.22],[49.12,38.90],[48.86,38.90],[48.86,39.22]]},
+ {"id":"C","label":"C · Coast","name":"Coastal strip south of the delta","coords":[[49.12,39.22],[49.24,39.22],[49.24,39.02],[49.12,39.02],[49.12,39.22]]}
+]

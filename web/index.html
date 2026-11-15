@@ -1,0 +1,1159 @@
+<title>Caspian Eye</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap">
+<style>
+/* Layout: radar mission console. Dark instrument bands (nav, hero, NISAR, footer) frame a light reading surface with the map workspace at its centre. */
+:root {
+  --bg: #edf1f0; --surface: #ffffff; --surface-2: #f4f7f6; --ink: #10201e; --muted: #50615f; --faint: #7a8a88; --line: #d3dcda;
+  --accent: #0b6774; --accent-soft: #d7ecee; --accent-ink: #ffffff; --sediment: #9c5a14;
+  --water: #2a78d6; --water-soft: #9ec5f4; --loss: #eb6834; --veg: #1baf7a;
+  --good: #0a7f0a; --warn: #a86f00; --crit: #c03535;
+  --map-bg: #0c1415; --map-ink: #e7efed;
+  --shadow: 0 1px 2px rgba(16, 32, 30, 0.05), 0 10px 28px -16px rgba(16, 32, 30, 0.22);
+  /* Instrument bands keep one dark look in both themes */
+  --deck: #061a1f; --deck-2: #0a252b; --deck-3: #0f2f36; --deck-ink: #e6f1ef; --deck-muted: #9fb9b6; --deck-faint: #6f8d8a;
+  --deck-line: rgba(159, 213, 206, 0.16); --deck-accent: #5cc8d4; --deck-accent-ink: #03171a;
+  --f-display: "IBM Plex Sans Condensed", "Arial Narrow", system-ui, sans-serif;
+  --f-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --r: 10px; --r-s: 6px; --nav-h: 58px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0b1314; --surface: #111c1e; --surface-2: #162426; --ink: #e3ebe9; --muted: #9db0ad; --faint: #75898a; --line: #243638;
+    --accent: #4fb9c7; --accent-soft: #15353a; --accent-ink: #04181b; --sediment: #e3a35a;
+    --water: #3987e5; --water-soft: #86b6ef; --loss: #d95926; --veg: #199e70;
+    --good: #3cc23c; --warn: #f2b33d; --crit: #ef6b6b;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 12px 30px -18px rgba(0, 0, 0, 0.7);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0b1314; --surface: #111c1e; --surface-2: #162426; --ink: #e3ebe9; --muted: #9db0ad; --faint: #75898a; --line: #243638;
+  --accent: #4fb9c7; --accent-soft: #15353a; --accent-ink: #04181b; --sediment: #e3a35a;
+  --water: #3987e5; --water-soft: #86b6ef; --loss: #d95926; --veg: #199e70;
+  --good: #3cc23c; --warn: #f2b33d; --crit: #ef6b6b;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 12px 30px -18px rgba(0, 0, 0, 0.7);
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { scroll-padding-top: calc(var(--nav-h) + env(safe-area-inset-top, 0px) + 12px); }
+@media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+body { background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 16px; line-height: 1.6; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 30; background: var(--deck); }
+.wrap { max-width: 1320px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+h1, h2, h3 { font-family: var(--f-display); text-wrap: balance; margin: 0; letter-spacing: 0.005em; }
+h2 { font-size: clamp(1.75rem, 3.2vw, 2.4rem); font-weight: 600; line-height: 1.1; }
+h3 { font-size: 1.12rem; font-weight: 600; line-height: 1.3; }
+p { margin: 0; }
+a { color: var(--accent); text-underline-offset: 2px; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.mono { font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
+.eyebrow { font-family: var(--f-mono); font-size: 0.72rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
+.lede { color: var(--muted); max-width: 68ch; font-size: 1.02rem; }
+.skip { position: absolute; left: 12px; top: -60px; z-index: 40; background: var(--deck-accent); color: var(--deck-accent-ink); padding: 8px 12px; border-radius: var(--r-s); font-weight: 600; }
+.skip:focus { top: calc(env(safe-area-inset-top, 0px) + 8px); }
+
+/* Buttons */
+.btn { display: inline-flex; align-items: center; gap: 8px; font: 600 0.92rem var(--f-body); text-decoration: none; padding: 11px 18px; border-radius: 99px; border: 1px solid transparent; cursor: pointer; white-space: nowrap; transition: background-color .15s, border-color .15s, color .15s; }
+.btn-primary { background: var(--deck-accent); color: var(--deck-accent-ink); }
+.btn-primary:hover { background: #7fd8e1; }
+.btn-ghost { color: var(--deck-ink); border-color: var(--deck-line); background: rgba(255, 255, 255, 0.03); }
+.btn-ghost:hover { border-color: var(--deck-accent); color: var(--deck-accent); }
+.btn-sm { padding: 7px 14px; font-size: 0.82rem; }
+
+/* Top bar */
+.topbar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; background: rgba(6, 26, 31, 0.92); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-bottom: 1px solid var(--deck-line); color: var(--deck-ink); }
+.topbar-in { height: var(--nav-h); display: flex; align-items: center; gap: 18px; }
+.logo { display: inline-flex; align-items: center; gap: 10px; color: var(--deck-ink); text-decoration: none; font: 700 1.02rem var(--f-display); letter-spacing: 0.1em; text-transform: uppercase; flex: none; }
+.scope { width: 26px; height: 26px; border-radius: 50%; position: relative; flex: none; border: 1.5px solid var(--deck-accent); background: radial-gradient(circle, var(--deck-accent) 0 3px, transparent 3.5px), radial-gradient(circle, transparent 0 6.5px, rgba(92, 200, 212, 0.45) 7px 7.6px, transparent 8px); overflow: hidden; }
+.scope::after { content: ""; position: absolute; inset: 0; border-radius: 50%; background: conic-gradient(from 0deg, rgba(92, 200, 212, 0.55), rgba(92, 200, 212, 0) 28%); animation: sweep 4s linear infinite; }
+@keyframes sweep { to { transform: rotate(1turn); } }
+.navlinks { display: flex; gap: 2px; overflow-x: auto; min-width: 0; flex: 1; scrollbar-width: none; }
+.navlinks::-webkit-scrollbar { display: none; }
+.navlinks a { color: var(--deck-muted); text-decoration: none; font: 500 0.86rem var(--f-body); padding: 7px 11px; border-radius: 99px; white-space: nowrap; }
+.navlinks a:hover { color: var(--deck-ink); background: rgba(255, 255, 255, 0.06); }
+
+/* Hero */
+.hero { background: var(--deck); color: var(--deck-ink); position: relative; overflow: hidden; }
+.hero::before { content: ""; position: absolute; inset: 0; pointer-events: none; opacity: 0.55;
+  background-image: linear-gradient(var(--deck-line) 1px, transparent 1px), linear-gradient(90deg, var(--deck-line) 1px, transparent 1px);
+  background-size: 64px 64px; -webkit-mask-image: radial-gradient(ellipse 80% 70% at 70% 40%, #000 20%, transparent 75%); mask-image: radial-gradient(ellipse 80% 70% at 70% 40%, #000 20%, transparent 75%); }
+.hero-in { position: relative; padding-block: clamp(36px, 6vw, 72px) 28px; display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr); gap: clamp(28px, 5vw, 64px); align-items: center; }
+.hero-copy { display: grid; gap: 22px; min-width: 0; }
+.hero .eyebrow { color: var(--deck-accent); }
+.hero h1 { font-size: clamp(3.4rem, 9vw, 7rem); font-weight: 700; line-height: 0.88; letter-spacing: 0.015em; text-transform: uppercase; }
+.hero h1 span { color: var(--deck-accent); }
+.thesis { font: 500 clamp(1.4rem, 2.6vw, 2rem) / 1.2 var(--f-display); color: var(--deck-ink); max-width: 24ch; text-wrap: balance; }
+.hero-lede { color: var(--deck-muted); font-size: 1.05rem; max-width: 56ch; }
+.cta { display: flex; flex-wrap: wrap; gap: 10px; }
+.tags { display: flex; flex-wrap: wrap; gap: 8px; }
+.tag { display: inline-flex; align-items: center; gap: 6px; font-family: var(--f-mono); font-size: 0.7rem; padding: 4px 9px; border-radius: 99px; border: 1px solid var(--deck-line); color: var(--deck-muted); background: rgba(255, 255, 255, 0.025); white-space: nowrap; }
+.hero-fig { margin: 0; display: grid; gap: 12px; min-width: 0; justify-self: center; width: min(100%, 470px); }
+.scopeframe { position: relative; border-radius: 14px; overflow: hidden; border: 1px solid var(--deck-line); background: var(--deck-2); box-shadow: 0 30px 80px -30px rgba(0, 0, 0, 0.8), 0 0 0 6px rgba(92, 200, 212, 0.05); aspect-ratio: 1000 / 1291; max-width: 100%; }
+.scopeframe img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.coord { position: absolute; font: 500 0.66rem var(--f-mono); color: var(--deck-ink); background: rgba(6, 26, 31, 0.72); padding: 3px 6px; border-radius: 4px; pointer-events: none; }
+.coord.tl { left: 10px; top: 10px; } .coord.br { right: 10px; bottom: 10px; }
+.figlabel { position: absolute; left: 10px; bottom: 10px; display: grid; gap: 2px; background: rgba(6, 26, 31, 0.78); padding: 8px 10px; border-radius: 6px; max-width: 62%; }
+.figlabel b { font: 600 1.35rem var(--f-display); color: var(--deck-ink); line-height: 1; font-variant-numeric: tabular-nums; }
+.figlabel span { font-size: 0.74rem; color: var(--deck-muted); line-height: 1.3; }
+.hero-fig figcaption { display: grid; gap: 8px; font-size: 0.8rem; color: var(--deck-muted); }
+.keyrow { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; }
+.keyrow > span { display: inline-flex; align-items: center; gap: 6px; }
+.hero .ramp i { width: 16px; }
+.kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1px; background: var(--deck-line); border: 1px solid var(--deck-line); border-radius: var(--r); overflow: hidden; }
+.kpi { background: var(--deck-2); padding: 18px 20px; display: grid; gap: 6px; align-content: start; min-width: 0; }
+.kpi .v { font-family: var(--f-display); font-size: clamp(2rem, 3.4vw, 2.7rem); font-weight: 600; line-height: 1; font-variant-numeric: tabular-nums; color: var(--deck-ink); }
+.kpi .v small { font-size: 1rem; font-weight: 500; color: var(--deck-muted); margin-left: 4px; }
+.kpi .k { font-size: 0.86rem; color: var(--deck-muted); line-height: 1.4; }
+.kpi .src { font-family: var(--f-mono); font-size: 0.68rem; color: var(--deck-faint); }
+.hero-foot { position: relative; padding-block: 0 34px; display: grid; gap: 14px; }
+.notice { font-size: 0.8rem; color: var(--deck-faint); max-width: 110ch; }
+
+/* Why it matters */
+.why { padding-block: 64px 8px; }
+.why-in { display: grid; gap: 26px; }
+.why-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+.why-item { display: grid; gap: 10px; align-content: start; padding: 22px; border-radius: var(--r); background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow); min-width: 0; }
+.why-item .big { font: 600 2.2rem/1 var(--f-display); font-variant-numeric: tabular-nums; color: var(--accent); }
+.why-item .big small { font-size: 1rem; color: var(--muted); font-weight: 500; margin-left: 3px; }
+.why-item p { color: var(--muted); font-size: 0.94rem; }
+
+/* Section heads */
+.sechead { display: grid; gap: 10px; }
+.explore { padding-block: 64px 10px; }
+.explore > .sechead { margin-bottom: 22px; }
+
+/* Workspace */
+.workspace { padding-block: 0 10px; display: grid; grid-template-columns: minmax(0, 1fr) 390px; gap: 24px; align-items: start; }
+.mapcol { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; min-width: 0; padding: 16px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow); }
+.toolbar { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: end; }
+.seg { display: flex; flex-wrap: wrap; gap: 4px; padding: 4px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface-2); }
+.seg button { font: 500 0.84rem var(--f-body); border: 0; background: transparent; color: var(--ink); padding: 7px 12px; border-radius: 8px; cursor: pointer; transition: background-color .15s, color .15s; }
+.seg button:hover { background: var(--accent-soft); }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+.field { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; min-width: 0; max-width: 100%; }
+.field label { font-family: var(--f-mono); font-size: 0.68rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+select { font: 0.88rem var(--f-mono); color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 7px 10px; max-width: 100%; }
+.controls { display: flex; flex-wrap: wrap; gap: 10px 12px; align-items: end; }
+.playbtn { font: 600 0.84rem var(--f-body); border: 1px solid var(--accent); background: var(--accent); color: var(--accent-ink); border-radius: 99px; padding: 8px 16px; cursor: pointer; }
+.playbtn[aria-pressed="true"] { background: var(--surface); color: var(--accent); }
+.check { display: inline-flex; gap: 6px; align-items: center; font-size: 0.86rem; color: var(--muted); padding-bottom: 8px; }
+
+.mapframe { position: relative; width: min(100%, calc(80vh * 1000 / 1285)); aspect-ratio: 1000 / 1285; max-width: 100%; margin-inline: auto; background: var(--map-bg); border-radius: var(--r); overflow: hidden; touch-action: none; cursor: crosshair; }
+.stage { position: absolute; inset: 0; transform-origin: 0 0; }
+.stage img, .stage canvas, .stage svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; image-rendering: auto; }
+.stage .grp { position: absolute; inset: 0; }
+.stage .grpB { clip-path: inset(0 0 0 50%); }
+.stage img.dim { filter: brightness(0.62) saturate(0.6); }
+.swipe-line { position: absolute; top: 0; bottom: 0; width: 2px; background: #ffffff; box-shadow: 0 0 0 1px rgba(0,0,0,.35); pointer-events: none; }
+.maplabel { position: absolute; top: 10px; font: 500 0.72rem var(--f-mono); color: var(--map-ink); background: rgba(8, 16, 17, 0.72); padding: 4px 7px; border-radius: 4px; pointer-events: none; max-width: 45%; }
+.maplabel.l { left: 10px; } .maplabel.r { right: 10px; text-align: right; }
+.zoomctl { position: absolute; right: 10px; bottom: 34px; display: grid; gap: 4px; }
+.zoomctl button { width: 34px; height: 34px; border-radius: 8px; border: 1px solid rgba(255,255,255,.25); background: rgba(8,16,17,.75); color: var(--map-ink); font: 600 1rem var(--f-mono); cursor: pointer; }
+.scalebar { position: absolute; left: 10px; bottom: 10px; color: var(--map-ink); font: 0.68rem var(--f-mono); pointer-events: none; }
+.scalebar i { display: block; height: 5px; border: 1.5px solid var(--map-ink); border-top: 0; margin-bottom: 2px; }
+.north { position: absolute; left: 10px; bottom: 40px; color: var(--map-ink); font: 600 0.72rem var(--f-mono); pointer-events: none; text-align: center; }
+.readout { display: flex; flex-wrap: wrap; gap: 4px 16px; font: 0.78rem var(--f-mono); color: var(--muted); min-height: 1.4em; }
+.readout b { color: var(--ink); font-weight: 500; }
+.swipectl { display: flex; align-items: center; gap: 10px; font: 0.75rem var(--f-mono); color: var(--muted); }
+.swipectl input { flex: 1; accent-color: var(--accent); min-width: 0; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 0.8rem; color: var(--muted); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.sw { width: 12px; height: 12px; border-radius: 3px; display: inline-block; flex: none; }
+.ramp { display: inline-flex; height: 10px; border-radius: 3px; overflow: hidden; }
+.ramp i { width: 18px; }
+
+/* Rail */
+.rail { display: grid; gap: 16px; min-width: 0; position: sticky; top: calc(env(safe-area-inset-top, 0px) + var(--nav-h) + 14px); }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 20px; display: grid; grid-template-columns: minmax(0, 1fr); align-content: start; gap: 12px; min-width: 0; box-shadow: var(--shadow); }
+.card header { display: grid; gap: 4px; }
+.statgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 16px; }
+.stat { display: grid; gap: 1px; min-width: 0; }
+.stat .k { font-size: 0.76rem; color: var(--muted); }
+.stat .v { font-family: var(--f-display); font-size: 1.6rem; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1.12; }
+.stat .v small { font-size: 0.8rem; color: var(--muted); font-weight: 500; margin-left: 2px; }
+.pill { display: inline-flex; align-items: center; gap: 5px; font: 500 0.72rem var(--f-mono); padding: 2px 8px; border-radius: 99px; border: 1px solid currentColor; }
+.pill.good { color: var(--good); } .pill.warn { color: var(--warn); } .pill.crit { color: var(--crit); } .pill.neutral { color: var(--muted); }
+.bar { height: 8px; border-radius: 4px; background: var(--surface-2); border: 1px solid var(--line); overflow: hidden; display: flex; gap: 2px; }
+.bar i { display: block; height: 100%; }
+.ai { display: grid; gap: 12px; }
+.ai .q { font-family: var(--f-display); font-weight: 600; font-size: 1rem; }
+.ai p { font-size: 0.9rem; }
+.ai .guard { font-size: 0.78rem; color: var(--muted); border-top: 1px dashed var(--line); padding-top: 10px; }
+.small { font-size: 0.8rem; color: var(--muted); }
+
+/* Sections */
+section.block { padding-block: 72px 8px; display: grid; gap: 22px; }
+.grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+.chart { position: relative; min-width: 0; }
+.chart svg { width: 100%; height: auto; display: block; overflow: visible; }
+.chart text { font-family: var(--f-mono); font-size: 11px; fill: var(--muted); }
+.chart .title { font-family: var(--f-body); }
+.tip { position: absolute; pointer-events: none; background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; font: 0.76rem var(--f-mono); color: var(--ink); box-shadow: var(--shadow); white-space: nowrap; z-index: 2; }
+#nisarCmp { max-height: 360px; overflow-y: auto; }
+details.tbl summary { cursor: pointer; font-size: 0.82rem; color: var(--accent); }
+.tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--r); background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: 0.84rem; }
+th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th { font: 500 0.7rem var(--f-mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); background: var(--surface-2); }
+td.num, th.num { text-align: right; font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
+tr:last-child td { border-bottom: 0; }
+.steps { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px; }
+.step { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 18px; display: grid; gap: 8px; align-content: start; min-width: 0; box-shadow: var(--shadow); }
+.step .n { font: 500 0.7rem var(--f-mono); color: var(--accent); letter-spacing: 0.1em; }
+.step p { font-size: 0.86rem; color: var(--muted); }
+.step code, .card code, li code { font-family: var(--f-mono); font-size: 0.8em; background: var(--surface-2); padding: 0 4px; border-radius: 3px; }
+ul.plain { margin: 0; padding-left: 1.1em; display: grid; gap: 7px; max-width: 78ch; }
+.phases { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+.phase { border-top: 3px solid var(--line); padding-top: 12px; display: grid; gap: 5px; align-content: start; min-width: 0; }
+.phase.done { border-color: var(--good); } .phase.part { border-color: var(--warn); }
+.phase p { font-size: 0.86rem; color: var(--muted); }
+.loading { color: var(--muted); font: 0.85rem var(--f-mono); }
+main { padding-bottom: 80px; }
+
+/* Dark instrument band: re-tokens everything inside it */
+.deckband { --bg: var(--deck); --surface: var(--deck-2); --surface-2: var(--deck-3); --ink: var(--deck-ink); --muted: var(--deck-muted); --faint: var(--deck-faint); --line: var(--deck-line);
+  --accent: var(--deck-accent); --accent-soft: rgba(92, 200, 212, 0.14); --accent-ink: var(--deck-accent-ink); --shadow: none; color-scheme: dark;
+  background: var(--deck); color: var(--deck-ink); margin-top: 72px; }
+.deckband section.block { padding-block: 64px 64px; }
+.film { display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 10px; }
+.film button { all: unset; cursor: pointer; display: grid; gap: 6px; min-width: 0; }
+.film img { width: 100%; aspect-ratio: 240 / 310; object-fit: cover; border-radius: 8px; border: 1px solid var(--deck-line); display: block; transition: transform .2s, border-color .2s; }
+.film button:hover img, .film button:focus-visible img { transform: translateY(-3px); border-color: var(--deck-accent); }
+.film button:focus-visible { outline: 2px solid var(--deck-accent); outline-offset: 3px; border-radius: 8px; }
+.film span { font: 0.7rem var(--f-mono); color: var(--deck-muted); text-align: center; }
+.filmhead { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 16px; align-items: baseline; }
+
+footer { background: var(--deck); color: var(--deck-muted); --line: var(--deck-line); --accent: var(--deck-accent); }
+.deckband + footer { border-top: 1px solid var(--deck-line); }
+footer .wrap { padding-block: 48px 56px; display: grid; gap: 28px; font-size: 0.86rem; }
+.foot-top { display: flex; flex-wrap: wrap; gap: 16px 28px; align-items: center; justify-content: space-between; }
+.foot-grid { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 32px; }
+footer h3 { color: var(--deck-ink); margin-bottom: 10px; }
+footer ol { margin: 0; padding-left: 1.2em; display: grid; gap: 6px; }
+footer p + p { margin-top: 10px; }
+
+@media (max-width: 1060px) {
+  .workspace { grid-template-columns: minmax(0, 1fr); }
+  .rail { position: static; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+  .steps { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .film { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+}
+@media (max-width: 900px) {
+  .hero-in { grid-template-columns: minmax(0, 1fr); }
+  .why-grid, .foot-grid { grid-template-columns: minmax(0, 1fr); }
+  .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 720px) {
+  .grid2, .phases { grid-template-columns: minmax(0, 1fr); }
+  .steps { grid-template-columns: minmax(0, 1fr); }
+  .mapframe { width: 100%; }
+  .mapcol { padding: 10px; }
+  .rail { grid-template-columns: minmax(0, 1fr); }
+  .film { grid-template-columns: repeat(10, 108px); overflow-x: auto; padding-bottom: 6px; }
+  .navlinks { display: none; }
+  .topbar-in { justify-content: space-between; }
+  .why, .explore { padding-block: 44px 6px; }
+  section.block { padding-block: 52px 6px; }
+}
+@media (max-width: 420px) { .kpis { grid-template-columns: minmax(0, 1fr); } }
+@media (prefers-reduced-motion: reduce) { *, *::after { transition: none !important; animation: none !important; } }
+</style>
+
+<a class="skip" href="#explore">Skip to the map</a>
+<nav class="topbar" aria-label="Sections">
+  <div class="wrap topbar-in">
+    <a class="logo" href="#top"><span class="scope" aria-hidden="true"></span>Caspian Eye</a>
+    <div class="navlinks">
+      <a href="#why">Why</a><a href="#explore">Map</a><a href="#trend">Evidence</a><a href="#nisar">NISAR</a><a href="#validation">Validation</a><a href="#method">Method</a><a href="#next">Roadmap</a>
+    </div>
+    <a class="btn btn-ghost btn-sm" href="https://github.com/omer55448/caspian-eye" target="_blank" rel="noopener">Source code</a>
+  </div>
+</nav>
+
+<header class="hero" id="top">
+  <div class="wrap hero-in">
+    <div class="hero-copy">
+      <div class="eyebrow">2026 NASA International Space Apps Challenge · Dancing with the SARs</div>
+      <h1>Caspian <span>Eye</span></h1>
+      <p class="thesis">The Kura River delta is turning from water into land.</p>
+      <p class="hero-lede">Radar satellites see this coast through cloud, by day and by night. Caspian Eye turns NISAR L-band and Sentinel-1 scenes into maps and numbers that show where, when and how much of the shallow sea became dry ground.</p>
+      <div class="cta">
+        <a class="btn btn-primary" href="#explore">Explore the map</a>
+        <a class="btn btn-ghost" href="https://ceye.online/demo.mp4" target="_blank" rel="noopener">▶ Watch the 30-second demo</a>
+        <a class="btn btn-ghost" href="#trend">See the evidence</a>
+      </div>
+      <div class="tags">
+        <span class="tag">AOI 48.85–49.60°E · 38.85–39.60°N</span>
+        <span class="tag">NISAR L-band (24 cm) GCOV γ⁰ · 10 dates</span>
+        <span class="tag">Sentinel-1 C-band γ⁰ RTC · 20 m grid</span>
+        <span class="tag">Sentinel-2 optical check</span>
+        <span class="tag" id="builtTag">Built 14–15 Nov 2026</span>
+      </div>
+    </div>
+    <figure class="hero-fig">
+      <div class="scopeframe">
+        <img src="img/hero.jpg" width="800" height="1033" alt="Radar map of the Kura River delta and Qızılağac Bay. Orange bands along the coast mark sea floor that became land between 2018 and 2026; the sea is dark blue.">
+        <span class="coord tl">39.60°N 48.85°E</span>
+        <span class="coord br">38.85°N 49.60°E</span>
+      </div>
+      <figcaption>
+        <span>Sea floor that turned into land, by the first October it stayed dry. Sentinel-1 radar, October 2017 → October 2026.</span>
+        <span class="keyrow">
+          <span><span class="ramp" aria-hidden="true"><i style="background:#6e2a0c"></i><i style="background:#8a3510"></i><i style="background:#a84215"></i><i style="background:#c5501c"></i><i style="background:#dd6128"></i><i style="background:#ec7a45"></i><i style="background:#f19566"></i><i style="background:#f5b08b"></i><i style="background:#f9cbb2"></i></span><span class="mono">2018 → 2026</span></span>
+          <span><i class="sw" style="background:#0b2b3d;border:1px solid var(--deck-line)"></i>Water, Oct 2026</span>
+        </span>
+      </figcaption>
+    </figure>
+  </div>
+  <div class="wrap hero-foot">
+    <div class="kpis" id="kpis" aria-live="polite">
+      <div class="kpi"><div class="v loading">…</div><div class="k">Loading indicators</div></div>
+      <div class="kpi"><div class="v loading">…</div><div class="k">&nbsp;</div></div>
+      <div class="kpi"><div class="v loading">…</div><div class="k">&nbsp;</div></div>
+      <div class="kpi"><div class="v loading">…</div><div class="k">&nbsp;</div></div>
+    </div>
+    <p class="notice">Independent concept prototype built only on open data. It is not affiliated with or endorsed by NASA, ISRO, JPL, ESA or the Alaska Satellite Facility. All numbers on this page were computed from the satellite data listed under Sources.</p>
+  </div>
+</header>
+
+<section class="why" id="why">
+  <div class="wrap why-in">
+    <div class="sechead">
+      <div class="eyebrow">Why it matters</div>
+      <h2>A coast that changes every year needs steady measurement</h2>
+    </div>
+    <div class="why-grid">
+      <article class="why-item">
+        <div class="big" id="whyA">282.2<small>km²</small></div>
+        <h3>The sea is retreating from the delta</h3>
+        <p>The Caspian Sea has fallen to a historic low and new islands are emerging (sources below). On this flat coast, that much water from October 2017 was dry land by October 2026.</p>
+      </article>
+      <article class="why-item">
+        <div class="big" id="whyB">−25<small>%</small></div>
+        <h3>A protected wetland is drying out</h3>
+        <p>Qızılağac Bay is a Ramsar-listed wetland and state nature reserve. Its open water shrank by a quarter between October 2017 and October 2026.</p>
+      </article>
+      <article class="why-item">
+        <div class="big">24<small>cm</small></div>
+        <h3>Radar sees what cameras miss</h3>
+        <p>Optical satellites lose cloudy days. Radar measures in any weather, day and night. NISAR's L-band waves are 24 cm long, so they can also reach water under reeds.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<main>
+  <section class="explore" id="explore">
+  <div class="wrap sechead">
+    <div class="eyebrow">Interactive map</div>
+    <h2>Explore the delta</h2>
+    <p class="lede">Choose a layer and two dates, then drag the slider under the map to compare them. Pick a zone to see its numbers; the panel on the right explains the change in plain language.</p>
+  </div>
+  <div class="wrap workspace">
+    <div class="mapcol">
+      <div class="toolbar">
+        <div class="field">
+          <label>Layer</label>
+          <div class="seg" id="modes" role="group" aria-label="Map layer"></div>
+        </div>
+      </div>
+      <div class="controls">
+        <div class="field" id="fA"><label for="selA">Date A</label><select id="selA"></select></div>
+        <div class="field" id="fB"><label for="selB">Date B</label><select id="selB"></select></div>
+        <div class="field"><label for="selZone">Zone</label><select id="selZone"></select></div>
+        <label class="check"><input type="checkbox" id="chkZones" checked> Pilot zones</label>
+        <button type="button" class="playbtn" id="play" aria-pressed="false">▶ Play time-lapse</button>
+      </div>
+      <div class="mapframe" id="frame">
+        <div class="stage" id="stage">
+          <div class="grp grpA" id="grpA"><img id="imgA" alt=""><canvas id="ovA" width="1000" height="1285"></canvas></div>
+          <div class="grp grpB" id="grpB"><img id="imgB" alt=""><canvas id="ovB" width="1000" height="1285"></canvas></div>
+          <svg id="vec" viewBox="0 0 1000 1285" preserveAspectRatio="none" aria-hidden="true"></svg>
+        </div>
+        <div class="swipe-line" id="swipeLine"></div>
+        <div class="maplabel l" id="labA"></div>
+        <div class="maplabel r" id="labB"></div>
+        <div class="north" aria-hidden="true">N<br>▲</div>
+        <div class="scalebar" id="scalebar"><i></i><span>10 km</span></div>
+        <div class="zoomctl">
+          <button type="button" id="zin" aria-label="Zoom in">+</button>
+          <button type="button" id="zout" aria-label="Zoom out">−</button>
+          <button type="button" id="zreset" aria-label="Reset view">⟲</button>
+        </div>
+      </div>
+      <div class="swipectl" id="swipeCtl"><span id="swA">A</span><input type="range" id="swipe" min="0" max="100" value="50" aria-label="Swipe between date A and date B"><span id="swB">B</span></div>
+      <div class="legend" id="legend"></div>
+      <div class="readout" id="readout">Move the pointer over the map to read coordinates and classes.</div>
+    </div>
+
+    <aside class="rail">
+      <div class="card" id="ctxCard"><div class="loading">Loading statistics…</div></div>
+      <div class="card ai" id="aiCard"><div class="loading">Preparing explanation…</div></div>
+    </aside>
+  </div>
+  </section>
+
+  <section class="wrap block" id="trend">
+    <div class="sechead">
+      <div class="eyebrow">Field statistics</div>
+      <h2>What the radar record shows</h2>
+      <p class="lede" id="trendLede">Open water mapped from Sentinel-1 for the selected zone. The October series compares the same season each year, so seasonal flooding does not drive the trend.</p>
+    </div>
+    <div class="grid2">
+      <div class="card"><header><h3 id="c1t">Open water each October, 2017–2026</h3><p class="small">km², Sentinel-1 orbit 108, VH threshold per scene. For the whole AOI, sea state and farmland add year-to-year noise; the pilot zones are steadier.</p></header><div class="chart" id="chart1"></div><details class="tbl"><summary>Show table</summary><div class="tablewrap" id="t1"></div></details></div>
+      <div class="card"><header><h3 id="c2t">Former sea floor that stayed dry, by first dry year</h3><p class="small">km² of pixels that were water in Oct 2017 and land in every later October from that year</p></header><div class="chart" id="chart2"></div><details class="tbl"><summary>Show table</summary><div class="tablewrap" id="t2"></div></details></div>
+    </div>
+    <div class="card"><header><h3 id="c3t">2026 season: open water from two radars</h3><p class="small" id="c3s">km², counted inside the area NISAR imaged on every date.</p></header><div class="chart" id="chart3"></div><details class="tbl"><summary>Show table</summary><div class="tablewrap" id="t3"></div></details></div>
+  </section>
+
+  <div class="deckband">
+  <section class="wrap block" id="nisar">
+    <div class="sechead">
+      <div class="eyebrow">Phase 1 deliverable · Coverage and data audit</div>
+      <h2>NISAR is already observing the Kura Delta</h2>
+      <p class="lede" id="auditLede">Query of NASA's Common Metadata Repository for NISAR Level-2 GCOV granules intersecting the pilot area.</p>
+    </div>
+    <div class="card">
+      <div class="filmhead"><h3>Ten NISAR L-band passes, June–October 2026</h3><span class="small">Track 165, frame 69 · HH, HV and HH−HV as red, green, blue · select a date to open it on the map</span></div>
+      <div class="film" id="film"></div>
+    </div>
+    <div class="card"><header><h3>Acquisition timeline by track and frame</h3><p class="small">Each mark is one GCOV product; color shows its release level. Rows are sorted by how much of the pilot area the frame covers.</p></header><div class="chart" id="timeline"></div></div>
+    <div class="tablewrap" id="auditTable"></div>
+    <div class="grid2">
+      <div class="card"><header><h3>NISAR quicklooks against the Sentinel-1 water map</h3><p class="small">NISAR browse images are 8-bit visualizations (~183 m), not calibrated γ⁰. Dark pixels were split with Otsu's method and compared with the nearest Sentinel-1 water map.</p></header><div class="tablewrap" id="nisarCmp"></div></div>
+      <div class="card"><header><h3>Full GCOV processing: track 165, frame 69</h3><p class="small">Calibrated L-band γ⁰ (HH, HV) read directly from each HDF5 product (about 1.4 GB) by byte range, reprojected from UTM 38N to the 20 m analysis grid. Water: a per-scene two-class model on smoothed HH and HV (5×5), trained on reference areas that Sentinel-1 mapped as water, or as land, on all six 2026 dates. Flooded-vegetation candidate: HH &gt; −3 dB and HH−HV &gt; 10 dB. In a test on 25 June, a single HV threshold reached only 78–80% agreement with Sentinel-1, because at 24 cm the smooth, dry semi-desert looks almost as dark as water. NISAR and Sentinel-1 maps line up to within one 20 m pixel.</p></header><div class="tablewrap" id="gcovTable"></div></div>
+    </div>
+  </section>
+  </div>
+
+  <section class="wrap block" id="validation">
+    <div class="sechead">
+      <div class="eyebrow">Quality control</div>
+      <h2>Validation against optical imagery</h2>
+      <p class="lede">Sentinel-1 water maps compared pixel by pixel with Sentinel-2 water (NDWI &gt; 0) on near-simultaneous cloud-free dates. Clouds, shadows and no-data pixels are excluded using the Sentinel-2 scene classification.</p>
+    </div>
+    <div class="tablewrap" id="valTable"></div>
+    <div class="card"><h3>Where the two sensors disagree</h3>
+      <ul class="plain small">
+        <li>Almost all disagreement is radar water that Sentinel-2 does not flag; optical-only water is under 1% of compared pixels.</li>
+        <li>On the open sea the two maps agree completely (checked on two offshore blocks, 16 Sep 2026).</li>
+        <li>Inland farmland is the largest source: about 165 km² of radar-only water on smooth bare fields in the north-west of the AOI on 11–16 Sep 2026. The radar mistakes these for water.</li>
+        <li>In Qızılağac Bay the shallow water is covered by algae and appears bright green in the optical layer. NDWI falls below zero there, while the radar still sees a water surface. Here the radar is the more reliable sensor.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="wrap block" id="method">
+    <div class="sechead">
+      <div class="eyebrow">Scientific method, as implemented</div>
+      <h2>How each change signal is produced</h2>
+    </div>
+    <div class="steps">
+      <div class="step"><span class="n">STEP 1</span><h3>Data selection</h3><p>One relative orbit (108, descending) so every date has the same viewing geometry. October scenes for the 2017–2026 trend; monthly scenes for 2026.</p></div>
+      <div class="step"><span class="n">STEP 2</span><h3>Pre-processing</h3><p>Sentinel-1 RTC γ⁰ (VV, VH) and NISAR L2 GCOV γ⁰ (HH, HV) on one 20 m UTM 39N grid. 3×3 boxcar on linear power to reduce speckle.</p></div>
+      <div class="step"><span class="n">STEP 3</span><h3>Classification</h3><p>C-band: open water where smoothed VH is below a per-scene Otsu threshold. L-band: per-scene two-class model on HH and HV, trained on stable reference areas. Both then get a 3×3 majority filter. Flooded-vegetation candidate from double bounce: VV &gt; −3 dB and VV−VH &gt; 9 dB (C-band), HH &gt; −3 dB and HH−HV &gt; 10 dB (L-band).</p></div>
+      <div class="step"><span class="n">STEP 4</span><h3>Comparison</h3><p>Pixel-wise transitions between any two dates, only where both dates are valid. Areas summed at 0.0004 km² per pixel inside each pilot polygon.</p></div>
+      <div class="step"><span class="n">STEP 5</span><h3>Confidence and validation</h3><p>Per-pixel confidence from distance to the threshold (≥2 dB = high). Agreement with Sentinel-2 NDWI, NISAR GCOV and NISAR quicklooks reported above.</p></div>
+    </div>
+    <div class="card"><h3>Limitations of this prototype</h3>
+      <ul class="plain small" id="limits">
+        <li>NISAR results come from one track (165, descending) and 10 dates since June 2026; most products are Provisional and may change after recalibration. The 2017–2026 trend relies on Sentinel-1, because NISAR data start in late 2025.</li>
+        <li>Over the sea, L-band HV sits at the instrument noise floor (about −22 dB), and the mean HH of water and of land differ by only 4–7 dB. NISAR therefore needs the two-channel model and reference areas; it also shows a noise-floor gradient across the swath.</li>
+        <li>Smooth bare or freshly worked fields can fall below the VH water threshold. This produces scattered inland changes on farmland that are not flooding. A land-cover or elevation mask is the planned fix.</li>
+        <li>Wind-roughened water can look like land in VV; the classifier uses VH for this reason, but very rough sea states can still cause misses. Smooth wet sand and mudflats can look like water.</li>
+        <li>The flooded-vegetation class is a radar signature candidate. Settlements and some infrastructure produce the same double-bounce signal and are not masked yet.</li>
+        <li>The October trend uses one scene per year, so a single unusual day (storm surge, strong wind) can shift that year's value. The production design uses several scenes per season.</li>
+        <li>Pilot zone boundaries are working polygons drawn for this demo. They need to be agreed with local institutions.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="wrap block" id="next">
+    <div class="sechead">
+      <div class="eyebrow">Delivery plan status</div>
+      <h2>From this prototype to a monitoring product</h2>
+    </div>
+    <div class="phases">
+      <div class="phase done"><span class="eyebrow">Weeks 1–2</span><h3>Coverage and data audit</h3><p>Done. 4 NISAR tracks, 10 frame stacks and their dates catalogued for the AOI.</p></div>
+      <div class="phase done"><span class="eyebrow">Weeks 3–4</span><h3>Initial SAR analysis</h3><p>Done: NISAR GCOV for 10 dates and Sentinel-1 for 15 dates, with water and change maps and area statistics.</p></div>
+      <div class="phase part"><span class="eyebrow">Weeks 5–6</span><h3>Web prototype</h3><p>This page: date comparison, zone statistics, explanation panel. Next: a hosted map service.</p></div>
+      <div class="phase"><span class="eyebrow">Weeks 7–8</span><h3>Validation and demo</h3><p>Optical check done. Needs field data and review by SAR hydrology experts.</p></div>
+    </div>
+    <div class="card"><h3>What we are asking for</h3>
+      <ul class="plain">
+        <li><strong>Technical guidance:</strong> the recommended NISAR products and processing chain for wetland inundation (GCOV vs. GSLC coherence) and the expected cadence over the Caspian coast.</li>
+        <li><strong>Scientific review:</strong> feedback on the threshold and double-bounce approach for L-band hydrology in reed-dominated deltas.</li>
+        <li><strong>Pilot validation:</strong> comparison of Kura Delta results with independent geospatial and ecological data, with local environmental institutions.</li>
+      </ul>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="foot-top">
+      <a class="logo" href="#top"><span class="scope" aria-hidden="true"></span>Caspian Eye</a>
+      <div class="cta">
+        <a class="btn btn-primary btn-sm" href="#explore">Open the map</a>
+        <a class="btn btn-ghost btn-sm" href="https://github.com/omer55448/caspian-eye" target="_blank" rel="noopener">Source code on GitHub</a>
+      </div>
+    </div>
+    <div class="foot-grid">
+    <div>
+    <h3>Sources and data credits</h3>
+    <ol>
+      <li>NISAR L2 GCOV metadata and browse images: NASA–ISRO SAR mission, distributed by the ASF DAAC via NASA Earthdata CMR (collections NISAR_L2_GCOV_BETA_V1, NISAR_L2_GCOV_PROVISIONAL_V1, NISAR_L2_GCOV_V1). <a href="https://nisar-docs.asf.alaska.edu/availability-overview/" target="_blank" rel="noopener">ASF NISAR availability</a> · <a href="https://asf.alaska.edu/notices/nisar-l-band-data-now-publicly-available/" target="_blank" rel="noopener">L-band public release, 20 Jul 2026</a> · <a href="https://science.nasa.gov/mission/nisar/" target="_blank" rel="noopener">NASA NISAR mission</a></li>
+      <li>NISAR L2 GCOV products (track 165, frame 69; Provisional and Validated releases), NASA–ISRO, downloaded from the ASF DAAC with NASA Earthdata Login. Granule identifiers are listed in the GCOV table.</li>
+      <li>Contains modified Copernicus Sentinel data 2017–2026: Sentinel-1 RTC and Sentinel-2 L2A, accessed through the Microsoft Planetary Computer STAC API.</li>
+      <li>Caspian Sea level context: <a href="https://www.euronews.com/2026/10/07/the-caspian-sea-has-been-shrinking-for-decades-now-a-new-island-has-emerged" target="_blank" rel="noopener">Euronews, 7 Oct 2026</a> · <a href="https://timesca.com/the-caspian-sea-hits-historic-low/" target="_blank" rel="noopener">The Times of Central Asia</a></li>
+    </ol>
+    </div>
+    <div>
+    <h3>How this was made</h3>
+    <p><strong>Use of AI.</strong> This project was built with the help of AI. An AI assistant (Claude, by Anthropic) wrote most of the processing code and this web page, proposed the classification method, drafted the text and produced the demo video. The team defined the concept and pilot area, set up NASA Earthdata access, reviewed the results and chose what to present. Every map and number on this page comes from running the processing code on the data listed under Sources; none was generated by an AI model. The explanation panel is generated from the same indicators by fixed rules.</p>
+    <p id="procNote">Processing: Python (h5py, rasterio, NumPy, SciPy), run on 14 Nov 2026. Scene identifiers for every date are listed in the tables above and in the data file published with this page.</p>
+    <p>Code: Python processing scripts and this web page, MIT licence, on <a href="https://github.com/omer55448/caspian-eye" target="_blank" rel="noopener">GitHub</a> and as a <a href="https://ceye.online/caspian-eye-source.zip" target="_blank" rel="noopener">zip archive</a>. Live site: <a href="https://ceye.online/" target="_blank" rel="noopener">ceye.online</a></p>
+    </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+(() => {
+  "use strict";
+  const $ = (s) => document.querySelector(s);
+  const fmt = (v, d = 1) => (v == null || isNaN(v)) ? "–" : Number(v).toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d });
+  const sgn = (v, d = 1) => (v > 0 ? "+" : v < 0 ? "−" : "±") + fmt(Math.abs(v), d);
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const nice = (iso) => { const [y, m, d] = iso.split("-"); return `${+d} ${MON[+m - 1]} ${y}`; };
+  const W = 1000, H = 1285;
+
+  // Map overlay colors (drawn over radar imagery, identical in both themes)
+  const C = { water: [42, 120, 214], waterSoft: [158, 197, 244], loss: [235, 104, 52], veg: [27, 175, 122] };
+  const EMERGE_RAMP = ["#6e2a0c", "#8a3510", "#a84215", "#c5501c", "#dd6128", "#ec7a45", "#f19566", "#f5b08b", "#f9cbb2"];
+
+  let D, AUD, NG, mode = "change";
+  const st = { zone: "B", zoom: 1, tx: 0, ty: 0, swipe: 50, zones: true, sel: {} };
+  const cache = new Map();
+
+  const MODES = [
+    { id: "change", label: "Change A→B", swipe: false },
+    { id: "water", label: "Water map", swipe: true },
+    { id: "radar", label: "Sentinel-1 radar", swipe: true },
+    { id: "nisar", label: "NISAR L-band", swipe: true },
+    { id: "nwater", label: "NISAR water map", swipe: true },
+    { id: "optical", label: "Optical", swipe: true },
+    { id: "retreat", label: "Coastline 2017–2026", swipe: false, nodates: true },
+    { id: "freq", label: "Water frequency 2026", swipe: false, nodates: true },
+  ];
+
+  function dateOptions(m) {
+    if (m === "nisar" || m === "nwater") return NG.dates.map((d) => ({ v: d, t: d }));
+    if (m === "optical") return D.s2_validation.map((s) => ({ v: s.date, t: s.date }));
+    return D.dates.map((d) => ({ v: d, t: d }));
+  }
+  function defaults(m) {
+    const o = dateOptions(m).map((x) => x.v);
+    if (m === "nisar" || m === "nwater") return [o[0], o[o.length - 1]];
+    if (m === "optical") return [o[0], o[o.length - 1]];
+    if (m === "change") return ["2017-10-21" in D.per_date ? "2017-10-21" : o[0], D.yearly[D.yearly.length - 1]];
+    if (m === "water" || m === "radar") return [D.s26[0], D.yearly[D.yearly.length - 1]];
+    return [o[0], o[o.length - 1]];
+  }
+  // Analysis pair (Sentinel-1 dates) used by statistics and the explanation panel
+  function analysisPair() {
+    if (["change", "water", "radar"].includes(mode)) return st.sel[mode];
+    return st.sel.change;
+  }
+
+  function loadImg(src) {
+    if (cache.has(src)) return cache.get(src);
+    const p = new Promise((res, rej) => { const im = new Image(); im.onload = () => res(im); im.onerror = () => rej(new Error("Could not load " + src)); im.src = src; });
+    cache.set(src, p); return p;
+  }
+  async function pixels(src) {
+    const key = "px:" + src;
+    if (cache.has(key)) return cache.get(key);
+    const p = loadImg(src).then((im) => {
+      const c = document.createElement("canvas"); c.width = W; c.height = H;
+      const g = c.getContext("2d", { willReadFrequently: true }); g.drawImage(im, 0, 0, W, H);
+      return g.getImageData(0, 0, W, H).data;
+    });
+    cache.set(key, p); return p;
+  }
+  const clsSrc = (d) => `img/cls_${d}.png`;
+  const vvSrc = (d) => `img/s1vv_${d}.jpg`;
+
+  // ---------- Map rendering ----------
+  const imgA = $("#imgA"), imgB = $("#imgB"), ovA = $("#ovA"), ovB = $("#ovB");
+  const gA = ovA.getContext("2d"), gB = ovB.getContext("2d");
+  let renderToken = 0;
+  let hover = { a: null, b: null, kind: null };
+
+  function paintClasses(ctx, px) {
+    const out = ctx.createImageData(W, H), o = out.data;
+    for (let i = 0; i < px.length; i += 4) {
+      const c = px[i];
+      if (c === 2) { o[i] = C.water[0]; o[i + 1] = C.water[1]; o[i + 2] = C.water[2]; o[i + 3] = 165; }
+      else if (c === 3) { o[i] = C.veg[0]; o[i + 1] = C.veg[1]; o[i + 2] = C.veg[2]; o[i + 3] = 230; }
+    }
+    ctx.putImageData(out, 0, 0);
+  }
+  function paintChange(ctx, a, b) {
+    const out = ctx.createImageData(W, H), o = out.data;
+    for (let i = 0; i < a.length; i += 4) {
+      const ca = a[i], cb = b[i];
+      if (!ca || !cb) continue;
+      const wa = ca === 2, wb = cb === 2;
+      let col = null, al = 0;
+      if (wa && wb) { col = C.waterSoft; al = 120; }
+      else if (!wa && wb) { col = C.water; al = 235; }
+      else if (wa && !wb) { col = C.loss; al = 235; }
+      if (col) { o[i] = col[0]; o[i + 1] = col[1]; o[i + 2] = col[2]; o[i + 3] = al; }
+    }
+    ctx.putImageData(out, 0, 0);
+  }
+  function hexRGB(h) { return [1, 3, 5].map((k) => parseInt(h.slice(k, k + 2), 16)); }
+  function paintTrend(ctx, px) {
+    const out = ctx.createImageData(W, H), o = out.data;
+    const years = D.yearly.map((d) => +d.slice(0, 4)).slice(1);
+    const ramp = years.map((_, k) => hexRGB(EMERGE_RAMP[Math.min(k, EMERGE_RAMP.length - 1)]));
+    for (let i = 0; i < px.length; i += 4) {
+      const ey = px[i], fy = px[i + 1];
+      if (ey) { const k = years.indexOf(2000 + ey); const c = ramp[Math.max(k, 0)]; o[i] = c[0]; o[i + 1] = c[1]; o[i + 2] = c[2]; o[i + 3] = 240; }
+      else if (fy) { o[i] = C.water[0]; o[i + 1] = C.water[1]; o[i + 2] = C.water[2]; o[i + 3] = 235; }
+    }
+    ctx.putImageData(out, 0, 0);
+  }
+  function paintFreq(ctx, px) {
+    const out = ctx.createImageData(W, H), o = out.data;
+    for (let i = 0; i < px.length; i += 4) {
+      const q = px[i + 1];
+      if (q === 2) { o[i] = C.veg[0]; o[i + 1] = C.veg[1]; o[i + 2] = C.veg[2]; o[i + 3] = 70 + Math.round(px[i] * 0.65); }
+      else if (q === 3) { o[i] = C.water[0]; o[i + 1] = C.water[1]; o[i + 2] = C.water[2]; o[i + 3] = 170; }
+    }
+    ctx.putImageData(out, 0, 0);
+  }
+
+  function legendHTML() {
+    const sw = (c, t) => `<span><i class="sw" style="background:${c}"></i>${t}</span>`;
+    if (mode === "change") return sw("rgb(158,197,244)", "Water on both dates") + sw("rgb(42,120,214)", "Became water (land → water)") + sw("rgb(235,104,52)", "Became land (water → land)");
+    if (mode === "water") return sw("rgb(42,120,214)", "Open water") + sw("rgb(27,175,122)", "Flooded-vegetation candidate (double bounce)");
+    if (mode === "retreat") {
+      const ys = D.yearly.map((d) => d.slice(0, 4)).slice(1);
+      return `<span>First dry October <span class="ramp">${ys.map((_, k) => `<i style="background:${EMERGE_RAMP[k]}"></i>`).join("")}</span> <span class="mono">${ys[0]} → ${ys[ys.length - 1]}</span></span>` + sw("rgb(42,120,214)", "Land that became water and stayed water");
+    }
+    if (mode === "freq") return sw("rgb(27,175,122)", "Water on some 2026 dates (seasonal or variable)") + sw("rgb(42,120,214)", "Water on every 2026 date");
+    if (mode === "nisar") return `<span>NISAR L2 GCOV γ⁰, 20 m. Red = HH (−22 to −4 dB), green = HV (−26 to −12 dB), blue = HH−HV (0 to 12 dB). Dark violet = open water; bright = rough or vegetated land. The green band far offshore is the HV noise floor rising across the swath, not a surface feature.</span>`;
+    if (mode === "nwater") return sw("rgb(42,120,214)", "Open water (L-band HV)") + sw("rgb(27,175,122)", "Flooded-vegetation candidate (HH double bounce)");
+    if (mode === "radar") return `<span>Sentinel-1 VV γ⁰, display range −25 to 0 dB. Dark = open water and smooth surfaces.</span>`;
+    if (mode === "optical") return `<span>Sentinel-2 L2A true color (B4, B3, B2).</span>`;
+    return "";
+  }
+
+  async function render() {
+    const tok = ++renderToken;
+    const m = MODES.find((x) => x.id === mode);
+    const [a, b] = st.sel[mode] || [];
+    $("#fA").hidden = !!m.nodates; $("#fB").hidden = !!m.nodates; $("#play").hidden = !!m.nodates;
+    $("#swipeCtl").hidden = !m.swipe; $("#swipeLine").hidden = !m.swipe;
+    $("#grpB").hidden = !m.swipe;
+    $("#legend").innerHTML = legendHTML();
+    let srcA, srcB, labA = "", labB = "", dimA = false, dimB = false;
+    gA.clearRect(0, 0, W, H); gB.clearRect(0, 0, W, H);
+    hover = { a: null, b: null, kind: mode };
+    const latest = D.yearly[D.yearly.length - 1];
+    try {
+      if (mode === "radar") { srcA = vvSrc(a); srcB = vvSrc(b); labA = "A · S1 VV " + a; labB = "B · S1 VV " + b; hover.a = pixels(clsSrc(a)); hover.b = pixels(clsSrc(b)); }
+      else if (mode === "nisar") { srcA = `img/ngc_${a}.jpg`; srcB = `img/ngc_${b}.jpg`; labA = "A · NISAR L-band " + a; labB = "B · NISAR L-band " + b; hover.a = pixels(`img/ncls_${a}.png`); hover.b = pixels(`img/ncls_${b}.png`); }
+      else if (mode === "nwater") {
+        srcA = `img/ngc_${a}.jpg`; srcB = `img/ngc_${b}.jpg`; dimA = dimB = true; labA = "A · NISAR water " + a; labB = "B · NISAR water " + b;
+        const [pa, pb] = await Promise.all([pixels(`img/ncls_${a}.png`), pixels(`img/ncls_${b}.png`)]);
+        if (tok !== renderToken) return;
+        paintClasses(gA, pa); paintClasses(gB, pb); hover.a = Promise.resolve(pa); hover.b = Promise.resolve(pb);
+      }
+      else if (mode === "optical") { srcA = `img/s2_${a}.jpg`; srcB = `img/s2_${b}.jpg`; labA = "A · Sentinel-2 " + a; labB = "B · Sentinel-2 " + b; }
+      else if (mode === "water") {
+        srcA = vvSrc(a); srcB = vvSrc(b); dimA = dimB = true; labA = "A · water " + a; labB = "B · water " + b;
+        const [pa, pb] = await Promise.all([pixels(clsSrc(a)), pixels(clsSrc(b))]);
+        if (tok !== renderToken) return;
+        paintClasses(gA, pa); paintClasses(gB, pb); hover.a = Promise.resolve(pa); hover.b = Promise.resolve(pb);
+      } else if (mode === "change") {
+        srcA = vvSrc(b); dimA = true; labA = `Change ${a} → ${b}`;
+        const [pa, pb] = await Promise.all([pixels(clsSrc(a)), pixels(clsSrc(b))]);
+        if (tok !== renderToken) return;
+        paintChange(gA, pa, pb); hover.a = Promise.resolve(pa); hover.b = Promise.resolve(pb);
+      } else if (mode === "retreat") {
+        srcA = vvSrc(latest); dimA = true; labA = `Shoreline change, October ${D.yearly[0].slice(0, 4)} → ${latest.slice(0, 4)}`;
+        const p = await pixels("img/trend.png"); if (tok !== renderToken) return; paintTrend(gA, p); hover.a = Promise.resolve(p);
+      } else if (mode === "freq") {
+        srcA = vvSrc(latest); dimA = true; labA = `Water frequency, ${D.s26.length} dates Jun–Nov 2026`;
+        const p = await pixels("img/freq2026.png"); if (tok !== renderToken) return; paintFreq(gA, p); hover.a = Promise.resolve(p);
+      }
+    } catch (e) { labA = "Could not load this layer. Reload the page to try again."; }
+    if (tok !== renderToken) return;
+    imgA.src = srcA || ""; imgA.classList.toggle("dim", dimA);
+    if (m.swipe) { imgB.src = srcB || ""; imgB.classList.toggle("dim", dimB); }
+    $("#labA").textContent = labA; $("#labB").textContent = m.swipe ? labB : ""; $("#labB").hidden = !m.swipe;
+    $("#swA").textContent = m.swipe ? "A " + (labA.split(" ").pop()) : ""; $("#swB").textContent = m.swipe ? (labB.split(" ").pop()) + " B" : "";
+    applySwipe(); drawVectors(); updateRail();
+  }
+
+  function applySwipe() {
+    const p = st.swipe;
+    $("#grpB").style.clipPath = `inset(0 0 0 ${p}%)`;
+    // swipe line position in frame coordinates (accounts for zoom/pan)
+    const fr = $("#frame").getBoundingClientRect();
+    const x = (p / 100) * fr.width * st.zoom + st.tx;
+    $("#swipeLine").style.left = `${x - 1}px`;
+    $("#swipeLine").style.display = (x < 0 || x > fr.width) ? "none" : "";
+  }
+
+  // ---------- Vector overlay: graticule + pilot zones ----------
+  function ll2px(lon, lat) { return [(lon - D.aoi[0]) / D.display.dlon, (D.aoi[3] - lat) / D.display.dlat]; }
+  function drawVectors() {
+    const svg = $("#vec");
+    let s = "";
+    const k = W / Math.max($("#frame").clientWidth, 1) / st.zoom; // 1 ekran pikseli = k viewBox vahidi
+    const sw = 1.2 * k;
+    for (let lon = 49.0; lon < D.aoi[2]; lon += 0.25) { const [x] = ll2px(lon, 0); s += `<line x1="${x}" y1="0" x2="${x}" y2="${H}" stroke="rgba(255,255,255,.18)" stroke-width="${sw}"/><text x="${x + 4 * k}" y="${H - 8 * k}" fill="rgba(255,255,255,.75)" font-size="${10 * k}" font-family="IBM Plex Mono, monospace">${lon.toFixed(2)}°E</text>`; }
+    for (let lat = 39.0; lat < D.aoi[3]; lat += 0.25) { const [, y] = ll2px(0, lat); s += `<line x1="0" y1="${y}" x2="${W}" y2="${y}" stroke="rgba(255,255,255,.18)" stroke-width="${sw}"/><text x="${6 * k}" y="${y - 5 * k}" fill="rgba(255,255,255,.75)" font-size="${10 * k}" font-family="IBM Plex Mono, monospace">${lat.toFixed(2)}°N</text>`; }
+    if (st.zones) {
+      for (const z of D.zones) {
+        const pts = z.coords.map(([lo, la]) => ll2px(lo, la).map((v) => v.toFixed(1)).join(",")).join(" ");
+        const on = st.zone === z.id;
+        const cx = z.coords.slice(0, -1).reduce((a, c) => a + c[0], 0) / (z.coords.length - 1);
+        const top = Math.max(...z.coords.map((c) => c[1]));
+        const [lx, ly] = ll2px(Math.min(...z.coords.map((c) => c[0])), top);
+        s += `<polygon points="${pts}" fill="${on ? "rgba(255,255,255,.06)" : "none"}" stroke="#ffffff" stroke-opacity="${on ? 1 : 0.75}" stroke-width="${(on ? 2.2 : 1.3) * k}" stroke-dasharray="${on ? "" : `${6 * k} ${4 * k}`}"/>`;
+        s += `<text x="${lx + 5 * k}" y="${ly + 15 * k}" fill="#ffffff" font-size="${12 * k}" font-weight="600" font-family="IBM Plex Sans Condensed, sans-serif" paint-order="stroke" stroke="rgba(0,0,0,.7)" stroke-width="${3 * k}">${esc(z.label)}</text>`;
+      }
+    }
+    svg.innerHTML = s;
+  }
+
+  // ---------- Zoom / pan ----------
+  function applyView() {
+    const fr = $("#frame").getBoundingClientRect();
+    const maxX = 0, minX = fr.width - fr.width * st.zoom, maxY = 0, minY = fr.height - fr.height * st.zoom;
+    st.tx = Math.min(maxX, Math.max(minX, st.tx)); st.ty = Math.min(maxY, Math.max(minY, st.ty));
+    $("#stage").style.transform = `translate(${st.tx}px, ${st.ty}px) scale(${st.zoom})`;
+    const mPerPx = D ? D.display.dlon * 111320 * Math.cos(((D.aoi[1] + D.aoi[3]) / 2) * Math.PI / 180) : 64.8;
+    const pxPerKm = (fr.width / W) * st.zoom * 1000 / mPerPx;
+    const km = [1, 2, 5, 10, 20].find((k) => k * pxPerKm >= 70) || 20;
+    $("#scalebar i").style.width = `${km * pxPerKm}px`; $("#scalebar span").textContent = `${km} km`;
+    applySwipe(); if (D) drawVectors();
+  }
+  function zoomAt(f, cx, cy) {
+    const nz = Math.min(8, Math.max(1, st.zoom * f));
+    st.tx = cx - (cx - st.tx) * (nz / st.zoom); st.ty = cy - (cy - st.ty) * (nz / st.zoom); st.zoom = nz; applyView();
+  }
+  const frame = $("#frame");
+  frame.addEventListener("wheel", (e) => { e.preventDefault(); const r = frame.getBoundingClientRect(); zoomAt(e.deltaY < 0 ? 1.25 : 0.8, e.clientX - r.left, e.clientY - r.top); }, { passive: false });
+  let drag = null;
+  frame.addEventListener("pointerdown", (e) => { if (e.target.closest(".zoomctl")) return; drag = { x: e.clientX, y: e.clientY, tx: st.tx, ty: st.ty }; frame.setPointerCapture(e.pointerId); });
+  frame.addEventListener("pointerup", () => { drag = null; });
+  frame.addEventListener("pointermove", (e) => {
+    if (drag) { st.tx = drag.tx + e.clientX - drag.x; st.ty = drag.ty + e.clientY - drag.y; applyView(); }
+    readout(e);
+  });
+  frame.addEventListener("pointerleave", () => { $("#readout").textContent = "Move the pointer over the map to read coordinates and classes."; });
+  $("#zin").onclick = () => { const r = frame.getBoundingClientRect(); zoomAt(1.5, r.width / 2, r.height / 2); };
+  $("#zout").onclick = () => { const r = frame.getBoundingClientRect(); zoomAt(1 / 1.5, r.width / 2, r.height / 2); };
+  $("#zreset").onclick = () => { st.zoom = 1; st.tx = 0; st.ty = 0; applyView(); };
+  window.addEventListener("resize", applyView);
+
+  const CLS = ["no data", "land", "open water", "flooded-veg. candidate"];
+  async function readout(e) {
+    if (!D) return;
+    const r = $("#stage").getBoundingClientRect();
+    const x = Math.floor((e.clientX - r.left) / r.width * W), y = Math.floor((e.clientY - r.top) / r.height * H);
+    if (x < 0 || y < 0 || x >= W || y >= H) return;
+    const lon = D.aoi[0] + (x + 0.5) * D.display.dlon, lat = D.aoi[3] - (y + 0.5) * D.display.dlat;
+    let html = `<span><b>${lat.toFixed(4)}°N ${lon.toFixed(4)}°E</b></span>`;
+    const i = (y * W + x) * 4;
+    try {
+      if (hover.kind === "retreat" && hover.a) { const p = await hover.a; html += p[i] ? `<span>first dry October: <b>${2000 + p[i]}</b></span>` : p[i + 1] ? `<span>water since <b>${2000 + p[i + 1]}</b></span>` : `<span>no persistent change</span>`; }
+      else if (hover.kind === "freq" && hover.a) { const p = await hover.a; html += `<span>water on <b>${Math.round(p[i] / 255 * 100)}%</b> of 2026 dates</span>`; }
+      else if (hover.a && hover.b) {
+        const [pa, pb] = await Promise.all([hover.a, hover.b]);
+        const [a, b] = st.sel[mode];
+        html += `<span>A ${a}: <b>${CLS[pa[i]] || "–"}</b></span><span>B ${b}: <b>${CLS[pb[i]] || "–"}</b></span><span>confidence A/B: <b>${Math.round(pa[i + 1] / 2.55)}% / ${Math.round(pb[i + 1] / 2.55)}%</b></span>`;
+      }
+    } catch (_) { /* layer still loading */ }
+    $("#readout").innerHTML = html;
+  }
+
+  // ---------- Context rail ----------
+  const zname = (id) => id === "AOI" ? "Whole pilot area" : (D.zones.find((z) => z.id === id) || {}).name;
+  function ngPair(a, b, z) {
+    const [x, y] = a < b ? [a, b] : [b, a];
+    return { a: x, b: y, ...NG.pairs[`${x}|${y}`][z] };
+  }
+  function pairStats(a, b, z) {
+    const [x, y] = a < b ? [a, b] : [b, a];
+    const pr = D.pairs[`${x}|${y}`][z], wa = D.per_date[x][z].water, wb = D.per_date[y][z].water;
+    return { a: x, b: y, wa, wb, net: wb - wa, pct: wa ? (wb - wa) / wa * 100 : 0, ...pr, area: D.per_date[x][z].area, fa: D.per_date[x][z].fveg, fb: D.per_date[y][z].fveg };
+  }
+  function confPill(v) { const p = Math.round(v * 100); return p >= 70 ? `<span class="pill good">● high ${p}%</span>` : p >= 45 ? `<span class="pill warn">▲ medium ${p}%</span>` : `<span class="pill crit">■ low ${p}%</span>`; }
+
+  function updateRail() {
+    const z = st.zone, card = $("#ctxCard");
+    if (mode === "nisar" || mode === "nwater") {
+      const s = ngPair(...st.sel[mode], z);
+      const ra = NG.rows.find((r) => r.date === s.a), rb = NG.rows.find((r) => r.date === s.b);
+      const net = s.wb - s.wa, tot = s.gain + s.loss + s.stable || 1;
+      card.innerHTML = `<header><span class="eyebrow">${esc(zname(z))} · NISAR L-band · ${fmt(s.area, 0)} km² compared</span><h3>${nice(s.a)} → ${nice(s.b)}</h3></header>
+        <div class="statgrid">
+          <div class="stat"><span class="k">Open water A</span><span class="v">${fmt(s.wa, 1)}<small>km²</small></span></div>
+          <div class="stat"><span class="k">Open water B</span><span class="v">${fmt(s.wb, 1)}<small>km²</small></span></div>
+          <div class="stat"><span class="k">Net change</span><span class="v">${sgn(net, 1)}<small>km²</small></span></div>
+          <div class="stat"><span class="k">Relative change</span><span class="v">${sgn(s.wa ? net / s.wa * 100 : 0, 1)}<small>%</small></span></div>
+          <div class="stat"><span class="k">Flooded-veg. candidate A</span><span class="v">${fmt(s.fa, 1)}<small>km²</small></span></div>
+          <div class="stat"><span class="k">Flooded-veg. candidate B</span><span class="v">${fmt(s.fb, 1)}<small>km²</small></span></div>
+          <div class="stat"><span class="k">Agrees with S1 ${esc(ra.s1_date)} (A)</span><span class="v">${fmt(ra.vs_s1[z].agreement * 100, 1)}<small>%</small></span></div>
+          <div class="stat"><span class="k">Agrees with S1 ${esc(rb.s1_date)} (B)</span><span class="v">${fmt(rb.vs_s1[z].agreement * 100, 1)}<small>%</small></span></div>
+        </div>
+        <div class="bar" role="img" aria-label="Share of water pixels: stable ${fmt(s.stable / tot * 100, 0)}%, became land ${fmt(s.loss / tot * 100, 0)}%, became water ${fmt(s.gain / tot * 100, 0)}%"><i style="width:${s.stable / tot * 100}%;background:var(--water-soft)"></i><i style="width:${s.loss / tot * 100}%;background:var(--loss)"></i><i style="width:${s.gain / tot * 100}%;background:var(--water)"></i></div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center"><span class="small">Changed pixels with high confidence on both dates</span>${confPill(s.change_hi_conf)}</div>
+        <p class="small mono">${esc(ra.granule || "")}<br>${esc(rb.granule || "")}</p>`;
+    } else if (mode === "nisar_old") {
+      const [a, b] = st.sel.nisar; const rows = [a, b].map((t) => D.nisar.find((n) => n.tag === t));
+      card.innerHTML = `<header><span class="eyebrow">NISAR quicklook</span><h3>${esc(rows[0].date)} → ${esc(rows[1].date)}</h3></header>
+        <div class="statgrid">${rows.map((r, k) => `<div class="stat"><span class="k">Dark area ${k ? "B" : "A"} (indicative)</span><span class="v">${fmt(r.dark_km2, 0)}<small>km²</small></span></div>`).join("")}
+        ${rows.map((r, k) => `<div class="stat"><span class="k">Agrees with S1 ${esc(r.s1_date)}</span><span class="v">${fmt(r.agreement_vs_s1 * 100, 0)}<small>%</small></span></div>`).join("")}</div>
+        <p class="small">Values come from 8-bit browse images at about 183 m and cover only the part of the AOI inside each frame (${fmt(rows[0].aoi_valid * 100, 0)}% and ${fmt(rows[1].aoi_valid * 100, 0)}%). They show that the L-band signal separates water and land here; they are not area measurements.</p>
+        <p class="small mono">${esc(rows[0].granule)}</p>`;
+    } else if (mode === "optical") {
+      const rows = st.sel.optical.map((d) => D.s2_validation.find((s) => s.date === d));
+      card.innerHTML = `<header><span class="eyebrow">Optical check</span><h3>Sentinel-2 vs Sentinel-1</h3></header>
+        <div class="statgrid">${rows.map((r) => `<div class="stat"><span class="k">${esc(r.date)} vs S1 ${esc(r.s1_date)}</span><span class="v">${fmt(r.overall_agreement * 100, 1)}<small>% agree</small></span><span class="small">water IoU ${fmt(r.water_iou, 2)} · gap ${r.gap_days} d</span></div>`).join("")}</div>
+        <p class="small">Agreement is computed on cloud-free pixels only. Full table in the validation section.</p>`;
+    } else if (mode === "retreat") {
+      const e = D.emergence_zone[z], tot = Object.values(e).reduce((s, v) => s + v, 0);
+      const y0 = D.yearly[0], y1 = D.yearly[D.yearly.length - 1];
+      const w0 = D.per_date[y0][z].water, w1 = D.per_date[y1][z].water;
+      card.innerHTML = `<header><span class="eyebrow">${esc(zname(z))}</span><h3>October ${y0.slice(0, 4)} → October ${y1.slice(0, 4)}</h3></header>
+        <div class="statgrid">
+          <div class="stat"><span class="k">Water in ${y0.slice(0, 4)}, land in ${y1.slice(0, 4)}</span><span class="v">${fmt(tot, 1)}<small>km²</small></span></div>
+          <div class="stat"><span class="k">Net open-water change</span><span class="v">${sgn(w1 - w0, 1)}<small>km²</small></span></div>
+          <div class="stat"><span class="k">Open water ${y0.slice(0, 4)}</span><span class="v">${fmt(w0, 1)}<small>km²</small></span></div>
+          <div class="stat"><span class="k">Open water ${y1.slice(0, 4)}</span><span class="v">${fmt(w1, 1)}<small>km²</small></span></div>
+        </div>
+        <p class="small">Each pixel is dated by the first October after its last wet October, so it stayed dry in every later October. ${fmt(e[y1.slice(0, 4)] || 0, 1)} km² dried only in ${y1.slice(0, 4)}; with one year of evidence, that part is the least certain.</p>`;
+    } else if (mode === "freq") {
+      const f = D.freq2026[z];
+      card.innerHTML = `<header><span class="eyebrow">${esc(zname(z))}</span><h3>Water regime, Jun–Nov 2026</h3></header>
+        <div class="statgrid">
+          <div class="stat"><span class="k">Seasonal or variable water</span><span class="v">${fmt(f.seasonal, 1)}<small>km²</small></span></div>
+          <div class="stat"><span class="k">Water on every 2026 date</span><span class="v">${fmt(f.permanent, 1)}<small>km²</small></span></div>
+        </div>
+        <p class="small">${D.s26.length} Sentinel-1 dates: ${D.s26.map(nice).join(", ")}. Seasonal pixels are the wetland dynamics signal for Pilot B; at the coast they also capture wind and wave effects.</p>`;
+    } else {
+      const [a, b] = analysisPair(); const s = pairStats(a, b, z);
+      const tot = s.gain + s.loss + s.stable || 1;
+      card.innerHTML = `<header><span class="eyebrow">${esc(zname(z))} · ${fmt(s.area, 0)} km² compared</span><h3>${nice(s.a)} → ${nice(s.b)}</h3></header>
+        <div class="statgrid">
+          <div class="stat"><span class="k">Open water A</span><span class="v">${fmt(s.wa, 1)}<small>km²</small></span></div>
+          <div class="stat"><span class="k">Open water B</span><span class="v">${fmt(s.wb, 1)}<small>km²</small></span></div>
+          <div class="stat"><span class="k">Net change</span><span class="v">${sgn(s.net, 1)}<small>km²</small></span></div>
+          <div class="stat"><span class="k">Relative change</span><span class="v">${sgn(s.pct, 1)}<small>%</small></span></div>
+          <div class="stat"><span class="k">Became land</span><span class="v">${fmt(s.loss, 1)}<small>km²</small></span></div>
+          <div class="stat"><span class="k">Became water</span><span class="v">${fmt(s.gain, 1)}<small>km²</small></span></div>
+        </div>
+        <div class="bar" role="img" aria-label="Share of water pixels: stable ${fmt(s.stable / tot * 100, 0)}%, became land ${fmt(s.loss / tot * 100, 0)}%, became water ${fmt(s.gain / tot * 100, 0)}%"><i style="width:${s.stable / tot * 100}%;background:var(--water-soft)"></i><i style="width:${s.loss / tot * 100}%;background:var(--loss)"></i><i style="width:${s.gain / tot * 100}%;background:var(--water)"></i></div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center"><span class="small">Changed pixels with high confidence on both dates</span>${confPill(s.change_hi_conf)}</div>`;
+    }
+    updateAI();
+  }
+
+  // ---------- Explanation panel ----------
+  function seasonOf(d) { const m = +d.slice(5, 7); return m <= 2 || m === 12 ? "winter" : m <= 5 ? "spring" : m <= 8 ? "summer" : "autumn"; }
+  function where(p) { return p ? `the largest connected patch, about ${fmt(p.km2, 0)} km², lies around ${p.lat.toFixed(3)}°N, ${p.lon.toFixed(3)}°E` : "no single patch is large enough to locate"; }
+  function aiNisar() {
+    const z = st.zone, s = ngPair(...st.sel[mode], z);
+    const ra = NG.rows.find((r) => r.date === s.a), rb = NG.rows.find((r) => r.date === s.b);
+    const net = s.wb - s.wa, pct = s.wa ? net / s.wa * 100 : 0, hc = Math.round(s.change_hi_conf * 100);
+    const zIn = z === "AOI" ? "the whole pilot area" : zname(z);
+    let what = `L-band open water in ${zIn} ${net < 0 ? "decreased" : "increased"} from ${fmt(s.wa, 1)} km² to ${fmt(s.wb, 1)} km² between ${nice(s.a)} and ${nice(s.b)} (${sgn(net, 1)} km², ${sgn(pct, 1)}%).`;
+    what += Math.abs(pct) < 5 ? " This is within the range that day-to-day conditions can produce, so it is not a meaningful change on its own." : " Both dates fall in the same year, so this reflects the seasonal water regime, not the long-term trend.";
+    what += ` The flooded-vegetation candidate area went from ${fmt(s.fa, 1)} km² to ${fmt(s.fb, 1)} km².`;
+    const wh = `${fmt(s.loss, 1)} km² changed from water to land and ${fmt(s.gain, 1)} km² from land to water; ${fmt(s.stable, 1)} km² was water on both dates (${fmt(s.area, 0)} km² valid on both dates). Open the NISAR water map layer to see where.`;
+    let rel = `${hc}% of changed pixels have a water probability above 0.83 or below 0.17 on both dates. `;
+    rel += hc >= 70 ? "The change signal is clear. " : hc >= 45 ? "Part of the change sits close to the threshold; treat edge pixels as uncertain. " : "Most of the change sits close to the threshold; the signal is weak. ";
+    rel += `Cross-check: the L-band water map matches the nearest Sentinel-1 C-band map on ${fmt(ra.vs_s1[z].agreement * 100, 1)}% and ${fmt(rb.vs_s1[z].agreement * 100, 1)}% of pixels; outside the reference areas used for training, agreement drops to ${fmt(ra.agree_nonref * 100, 0)}% and ${fmt(rb.agree_nonref * 100, 0)}%, so field and shoreline pixels remain the uncertain part. Products are ${ra.collection === "V1" ? "Validated" : "Provisional"} and ${rb.collection === "V1" ? "Validated" : "Provisional"} releases. Double-bounce candidates also include buildings and need a settlement mask.`;
+    $("#aiCard").innerHTML = `<header><span class="eyebrow">Explanation layer · draft · NISAR</span><h3>${esc(zname(z))}, ${nice(s.a)} → ${nice(s.b)}</h3></header>
+      <div><p class="q">What happened?</p><p>${what}</p></div>
+      <div><p class="q">Where and how much?</p><p>${wh}</p></div>
+      <div><p class="q">How reliable is it?</p><p>${rel}</p></div>
+      <p class="guard">Generated from the indicators on this page by fixed rules. In the product, a language model writes this text from the same indicators and metadata and is not allowed to add facts. It describes a measured change signal; it never declares that a flood or disaster has occurred.</p>`;
+  }
+  function updateAI() {
+    if (mode === "nisar" || mode === "nwater") return aiNisar();
+    const z = st.zone; const [a0, b0] = mode === "retreat" ? [D.yearly[0], D.yearly[D.yearly.length - 1]] : analysisPair();
+    const s = pairStats(a0, b0, z);
+    const sameSeason = s.a.slice(5, 7) === s.b.slice(5, 7) || Math.abs(+s.a.slice(5, 7) - +s.b.slice(5, 7)) <= 1;
+    const years = +s.b.slice(0, 4) - +s.a.slice(0, 4);
+    const dir = s.net < 0 ? "decreased" : "increased";
+    const big = Math.abs(s.pct) >= 5;
+    const thrA = D.thresholds[s.a].vh, thrB = D.thresholds[s.b].vh;
+    const val = D.s2_validation.slice().sort((p, q) => Math.abs(Date.parse(p.s1_date) - Date.parse(s.b)) - Math.abs(Date.parse(q.s1_date) - Date.parse(s.b)))[0];
+    const zIn = z === "AOI" ? "the whole pilot area" : zname(z);
+    let what = `Mapped open water in ${zIn} ${dir} from ${fmt(s.wa, 1)} km² to ${fmt(s.wb, 1)} km² between ${nice(s.a)} and ${nice(s.b)} (${sgn(s.net, 1)} km², ${sgn(s.pct, 1)}%).`;
+    if (!big) what += " This is within the range that day-to-day conditions can produce, so it should not be read as a meaningful change on its own.";
+    else if (sameSeason && years >= 2) { what += ` Both dates fall in the same season ${years} years apart, so the difference reflects a multi-year process more than seasonal flooding.`; if (s.net < 0) what += " A loss of water along the coast is consistent with the documented fall of the Caspian Sea level."; }
+    else if (!sameSeason) what += ` The dates are in different seasons (${seasonOf(s.a)} and ${seasonOf(s.b)}), so part of this difference is the normal seasonal water regime.`;
+    const wh = `${fmt(s.loss, 1)} km² changed from water to land; ${where(s.loss_patch)}. ${fmt(s.gain, 1)} km² changed from land to water; ${where(s.gain_patch)}. ${fmt(s.stable, 1)} km² was water on both dates. Use the Change layer to see the areas.`;
+    const hc = Math.round(s.change_hi_conf * 100);
+    let rel = `${hc}% of changed pixels are at least 2 dB away from the water threshold on both dates (thresholds ${thrA} dB and ${thrB} dB, VH). `;
+    rel += hc >= 70 ? "The change signal is clear. " : hc >= 45 ? "Part of the change sits close to the threshold; treat edge pixels as uncertain. " : "Most of the change sits close to the threshold; the signal is weak and needs checking against other dates. ";
+    if (val) rel += `On ${nice(val.date)} the radar water map agreed with Sentinel-2 optical water on ${fmt(val.overall_agreement * 100, 1)}% of cloud-free pixels (water IoU ${fmt(val.water_iou, 2)}). `;
+    rel += "Gaps: one scene per date, C-band only for this comparison (NISAR data start in late 2025; see the NISAR layers), no field data yet. Scattered inland changes on farmland are most likely smooth bare fields, not flooding: the optical check found most radar-only water on fields.";
+    $("#aiCard").innerHTML = `<header><span class="eyebrow">Explanation layer · draft</span><h3>${esc(zname(z))}, ${nice(s.a)} → ${nice(s.b)}</h3></header>
+      <div><p class="q">What happened?</p><p>${what}</p></div>
+      <div><p class="q">Where and how much?</p><p>${wh}</p></div>
+      <div><p class="q">How reliable is it?</p><p>${rel}</p></div>
+      <p class="guard">Generated from the indicators on this page by fixed rules. In the product, a language model writes this text from the same indicators and metadata and is not allowed to add facts. It describes a measured change signal; it never declares that a flood or disaster has occurred.</p>`;
+  }
+
+  // ---------- Charts (SVG) ----------
+  function tipFor(el) { let t = el.querySelector(".tip"); if (!t) { t = document.createElement("div"); t.className = "tip"; t.hidden = true; el.appendChild(t); } return t; }
+  function lineChart(el, series, o) {
+    // series: [{name, color, pts: [{x, y, label}]}]
+    const w = o.w || 640, h = o.h || 240, m = { l: 46, r: 92, t: 14, b: 30 };
+    const all = series.flatMap((sr) => sr.pts);
+    const xs = all.map((p) => +p.x), ys = all.map((p) => p.y);
+    const x0 = o.xmin ?? Math.min(...xs), x1 = o.xmax ?? Math.max(...xs);
+    let y0 = Math.min(...ys), y1 = Math.max(...ys); const pad = (y1 - y0) * 0.15 || 1; y0 = Math.max(0, y0 - pad); y1 = y1 + pad;
+    const step = niceStep((y1 - y0) / 4); y0 = Math.floor(y0 / step) * step; y1 = Math.ceil(y1 / step) * step;
+    const X = (v) => m.l + (v - x0) / (x1 - x0 || 1) * (w - m.l - m.r), Y = (v) => h - m.b - (v - y0) / (y1 - y0 || 1) * (h - m.t - m.b);
+    const multi = series.length > 1;
+    let s = `<svg viewBox="0 0 ${w} ${h}" role="img" aria-label="${esc(o.aria)}">`;
+    for (let v = y0; v <= y1 + 1e-9; v += step) s += `<line x1="${m.l}" x2="${w - m.r}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--line)" stroke-width="1"/><text x="${m.l - 6}" y="${Y(v) + 4}" text-anchor="end">${fmt(v, step < 1 ? 1 : 0)}</text>`;
+    for (const t of o.xticks) s += `<text x="${X(+t.v)}" y="${h - m.b + 18}" text-anchor="middle">${esc(t.t)}</text>`;
+    if (o.events) for (const e of o.events) s += `<line x1="${X(+e.x)}" x2="${X(+e.x)}" y1="${h - m.b}" y2="${h - m.b - 8}" stroke="${e.color}" stroke-width="2"/>`;
+    const ends = [];
+    for (const sr of series) {
+      const pts = sr.pts; if (!pts.length) continue;
+      const path = pts.map((p, k) => `${k ? "L" : "M"}${X(+p.x).toFixed(1)},${Y(p.y).toFixed(1)}`).join("");
+      if (!multi) { const area = path + `L${X(+pts[pts.length - 1].x).toFixed(1)},${Y(y0)}L${X(+pts[0].x).toFixed(1)},${Y(y0)}Z`; s += `<path d="${area}" fill="${sr.color}" fill-opacity="0.08"/>`; }
+      s += `<path d="${path}" fill="none" stroke="${sr.color}" stroke-width="2" stroke-linejoin="round"/>`;
+      pts.forEach((p, k) => { const last = k === pts.length - 1; s += `<circle cx="${X(+p.x)}" cy="${Y(p.y)}" r="${last ? 5 : 4}" fill="${last ? sr.color : "var(--surface)"}" stroke="${sr.color}" stroke-width="2"/>`; });
+      const lp = pts[pts.length - 1]; ends.push({ x: X(+lp.x) + 9, y: Y(lp.y) + 4, t: multi ? `${sr.short || sr.name} ${fmt(lp.y, 0)}` : `${fmt(lp.y, 1)} km²` });
+      if (!multi) { const fp = pts[0]; s += `<text x="${X(+fp.x) + 8}" y="${Y(fp.y) - 10}" style="fill:var(--ink)">${fmt(fp.y, 1)} km²</text>`; }
+    }
+    ends.sort((a, b) => a.y - b.y); for (let k = 1; k < ends.length; k++) if (ends[k].y - ends[k - 1].y < 13) ends[k].y = ends[k - 1].y + 13;
+    for (const e of ends) s += `<text x="${e.x}" y="${e.y}" style="fill:var(--ink)">${esc(e.t)}</text>`;
+    s += `<line class="xh" x1="0" x2="0" y1="${m.t}" y2="${h - m.b}" stroke="var(--muted)" stroke-dasharray="3 3" visibility="hidden"/>`;
+    s += `<rect x="${m.l}" y="${m.t}" width="${w - m.l - m.r}" height="${h - m.t - m.b}" fill="transparent" class="hit"/></svg>`;
+    if (multi) s += `<div class="legend" style="margin-top:6px">${series.map((sr) => `<span><i class="sw" style="background:${sr.color}"></i>${esc(sr.name)}</span>`).join("")}</div>`;
+    el.innerHTML = s; const tip = tipFor(el), svg = el.querySelector("svg"), xh = svg.querySelector(".xh");
+    const flat = series.flatMap((sr) => sr.pts.map((p) => ({ ...p, sr })));
+    svg.querySelector(".hit").addEventListener("pointermove", (e) => {
+      const r = svg.getBoundingClientRect(), vx = (e.clientX - r.left) / r.width * w, vy = (e.clientY - r.top) / r.height * h;
+      let best = flat[0], bd = Infinity;
+      for (const p of flat) { const dd = (X(+p.x) - vx) ** 2 + 0.25 * (Y(p.y) - vy) ** 2; if (dd < bd) { bd = dd; best = p; } }
+      xh.setAttribute("x1", X(+best.x)); xh.setAttribute("x2", X(+best.x)); xh.setAttribute("visibility", "visible");
+      tip.hidden = false; tip.innerHTML = `${multi ? esc(best.sr.name) + "<br>" : ""}${esc(best.label)}<br><b>${fmt(best.y, 1)} km²</b>`;
+      const px = X(+best.x) / w * r.width, py = Y(best.y) / h * r.height;
+      tip.style.left = `${Math.max(0, Math.min(px + 12, r.width - 170))}px`; tip.style.top = `${Math.max(py - 56, 0)}px`;
+    });
+    svg.querySelector(".hit").addEventListener("pointerleave", () => { tip.hidden = true; xh.setAttribute("visibility", "hidden"); });
+  }
+  function barChart(el, bars, o) {
+    const w = 640, h = 240, m = { l: 46, r: 16, t: 14, b: 30 };
+    let y1 = Math.max(...bars.map((b) => b.y), 0.1); const step = niceStep(y1 / 4); y1 = Math.ceil(y1 / step) * step;
+    const bw = (w - m.l - m.r) / bars.length;
+    const Y = (v) => h - m.b - v / y1 * (h - m.t - m.b);
+    let s = `<svg viewBox="0 0 ${w} ${h}" role="img" aria-label="${esc(o.aria)}">`;
+    for (let v = 0; v <= y1 + 1e-9; v += step) s += `<line x1="${m.l}" x2="${w - m.r}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--line)"/><text x="${m.l - 6}" y="${Y(v) + 4}" text-anchor="end">${fmt(v, step < 1 ? 1 : 0)}</text>`;
+    const top = bars.reduce((a, b) => b.y > a.y ? b : a, bars[0]);
+    bars.forEach((b, k) => {
+      const x = m.l + k * bw + 3, bwi = Math.max(bw - 6, 2), y = Y(b.y), hh = h - m.b - y;
+      const r = Math.min(4, bwi / 2, hh);
+      s += hh > 0 ? `<path d="M${x},${h - m.b}V${y + r}Q${x},${y} ${x + r},${y}H${x + bwi - r}Q${x + bwi},${y} ${x + bwi},${y + r}V${h - m.b}Z" fill="${o.color}" data-k="${k}"/>` : "";
+      s += `<rect x="${m.l + k * bw}" y="${m.t}" width="${bw}" height="${h - m.t - m.b}" fill="transparent" class="hb" data-k="${k}"/>`;
+      s += `<text x="${x + bwi / 2}" y="${h - m.b + 18}" text-anchor="middle">${esc(b.t)}</text>`;
+      if (b === top) s += `<text x="${x + bwi / 2}" y="${y - 6}" text-anchor="middle" style="fill:var(--ink)">${fmt(b.y, 1)}</text>`;
+    });
+    s += `</svg>`; el.innerHTML = s; const tip = tipFor(el), svg = el.querySelector("svg");
+    svg.querySelectorAll(".hb").forEach((hb) => {
+      hb.addEventListener("pointermove", (e) => { const b = bars[+hb.dataset.k], r = svg.getBoundingClientRect(); tip.hidden = false; tip.innerHTML = `${esc(b.label)}<br><b>${fmt(b.y, 2)} km²</b>`; tip.style.left = `${Math.min(e.clientX - r.left + 12, r.width - 150)}px`; tip.style.top = `${Math.max(e.clientY - r.top - 44, 0)}px`; });
+      hb.addEventListener("pointerleave", () => { tip.hidden = true; });
+    });
+  }
+  function niceStep(raw) { const p = Math.pow(10, Math.floor(Math.log10(raw || 1))); const n = raw / p; return (n <= 1 ? 1 : n <= 2 ? 2 : n <= 5 ? 5 : 10) * p; }
+  function table(el, head, rows, numCols = []) {
+    el.innerHTML = `<table><thead><tr>${head.map((h, k) => `<th class="${numCols.includes(k) ? "num" : ""}">${esc(h)}</th>`).join("")}</tr></thead><tbody>${rows.map((r) => `<tr>${r.map((c, k) => `<td class="${numCols.includes(k) ? "num" : ""}">${c}</td>`).join("")}</tr>`).join("")}</tbody></table>`;
+  }
+
+  function drawCharts() {
+    const z = st.zone, zn = zname(z);
+    $("#c1t").textContent = `Open water each October, ${D.yearly[0].slice(0, 4)}–${D.yearly[D.yearly.length - 1].slice(0, 4)} · ${zn}`;
+    const p1 = D.yearly.map((d) => ({ x: Date.parse(d), y: D.per_date[d][z].water, label: nice(d) }));
+    lineChart($("#chart1"), [{ name: "Sentinel-1", color: "var(--water)", pts: p1 }], { aria: `Open water each October in ${zn}`, xticks: D.yearly.map((d) => ({ v: Date.parse(d), t: d.slice(0, 4) })) });
+    table($("#t1"), ["Date", "Open water km²", "High-confidence share", "Sentinel-1 scene"], D.yearly.map((d) => [d, fmt(D.per_date[d][z].water, 2), fmt(D.per_date[d][z].hi_conf * 100, 0) + "%", `<span class="mono small">${esc((D.s1_meta[d] || {}).items?.[0] || "")}</span>`]), [1, 2]);
+    const e = D.emergence_zone[z];
+    $("#c2t").textContent = `Former water that stayed dry, by first dry year · ${zn}`;
+    barChart($("#chart2"), Object.entries(e).map(([y, v]) => ({ t: y, y: v, label: `First dry in October ${y}` })), { aria: `Area that emerged from water by year in ${zn}`, color: "var(--loss)" });
+    table($("#t2"), ["First dry October", "Area km²"], Object.entries(e).map(([y, v]) => [y, fmt(v, 2)]), [1]);
+    $("#c3t").textContent = `2026 season: open water from two radars · ${zn}`;
+    const p3 = D.s26.map((d) => ({ x: Date.parse(d), y: NG.common.s1[d][z], label: nice(d) }));
+    const acq = AUD.stacks.flatMap((s) => s.acq.filter((a) => a.date >= D.s26[0] && a.date <= D.s26[D.s26.length - 1] && a.cov >= 0.3).map((a) => a.date));
+    const uniqAcq = [...new Set(acq)].sort();
+    const xmin = Date.parse(D.s26[0]) - 5 * 864e5, xmax = Date.parse(D.s26[D.s26.length - 1]) + 5 * 864e5;
+    const months = []; for (let mth = 6; mth <= 11; mth++) months.push({ v: Date.UTC(2026, mth - 1, 1), t: MON[mth - 1] });
+    const pN = NG.rows.map((r) => ({ x: Date.parse(r.date), y: r.per_zone[z].water_common, label: nice(r.date) }));
+    $("#c3s").textContent = `km², counted only inside the part of this zone that NISAR imaged on all ${NG.dates.length} dates (${fmt(NG.common.area[z], 0)} of ${fmt(D.per_date[D.s26[0]][z].area, 0)} km²), so both sensors measure the same ground. Sentinel-1 is C-band (5.6 cm), NISAR is L-band (24 cm). Ticks on the time axis: all NISAR GCOV acquisitions over the pilot area, on every track.`;
+    lineChart($("#chart3"), [{ name: "Sentinel-1 C-band (orbit 108)", short: "S1", color: "var(--water)", pts: p3 }, { name: "NISAR L-band (track 165)", short: "NISAR", color: "var(--veg)", pts: pN }], { w: 1200, h: 260, aria: `Open water during 2026 in ${zn} with NISAR acquisition dates`, xmin, xmax, xticks: months.filter((t) => t.v >= xmin && t.v <= xmax), events: uniqAcq.map((d) => ({ x: Date.parse(d), color: "var(--accent)" })) });
+    const rows3 = D.s26.map((d) => [d, "Sentinel-1 C-band", fmt(NG.common.s1[d][z], 2), fmt(D.per_date[d][z].water, 2)])
+      .concat(NG.rows.map((r) => [r.date, "NISAR L-band", fmt(r.per_zone[z].water_common, 2), fmt(r.per_zone[z].water, 2) + ` (${fmt(r.per_zone[z].valid * 100, 0)}% imaged)`])).sort((p, q) => p[0].localeCompare(q[0]));
+    table($("#t3"), ["Date", "Sensor", "Open water km², common area", "Open water km², all imaged pixels"], rows3, [2, 3]);
+  }
+
+  function drawAudit() {
+    const S = AUD.stacks.slice().sort((p, q) => q.max_cov - p.max_cov);
+    const lv = { Beta: "#eb6834", Provisional: "#2a78d6", Validated: "#1baf7a" };
+    const w = 900, rowH = 24, m = { l: 150, r: 16, t: 26, b: 26 }, h = m.t + S.length * rowH + m.b;
+    const t0 = Date.UTC(2025, 9, 1), t1 = Date.UTC(2026, 10, 15);
+    const X = (d) => m.l + (Date.parse(d) - t0) / (t1 - t0) * (w - m.l - m.r);
+    let s = `<div style="overflow-x:auto"><svg viewBox="0 0 ${w} ${h}" style="min-width:640px" role="img" aria-label="NISAR acquisitions over the pilot area by track and frame">`;
+    for (let y = 2025, mo = 10; y < 2026 || mo <= 11; mo++) { if (mo > 12) { mo = 1; y++; } const d = `${y}-${String(mo).padStart(2, "0")}-01`; const x = X(d); s += `<line x1="${x}" x2="${x}" y1="${m.t - 6}" y2="${h - m.b}" stroke="var(--line)"/><text x="${x + 3}" y="${m.t - 10}">${MON[mo - 1]}${mo === 1 || (y === 2025 && mo === 10) ? " " + y : ""}</text>`; if (y === 2026 && mo === 11) break; }
+    const rel = X("2026-07-20"); s += `<line x1="${rel}" x2="${rel}" y1="${m.t - 6}" y2="${h - m.b}" stroke="var(--ink)" stroke-dasharray="4 3"/><text x="${rel + 4}" y="${h - 8}" style="fill:var(--ink)">public L-band release 20 Jul 2026</text>`;
+    S.forEach((st_, k) => {
+      const y = m.t + k * rowH + rowH / 2;
+      s += `<text x="${m.l - 8}" y="${y + 4}" text-anchor="end">T${String(st_.track).padStart(3, "0")} ${st_.dir[0]} F${String(st_.frame).padStart(3, "0")} ${st_.mode === "2005" ? "20+5" : "40+5"} · ${Math.round(st_.max_cov * 100)}%</text>`;
+      for (const a of st_.acq) s += `<circle cx="${X(a.date)}" cy="${y}" r="4.5" fill="${lv[a.level]}" stroke="var(--surface)" stroke-width="2"><title>${a.date} · ${a.level} · AOI cover ${Math.round(a.cov * 100)}%</title></circle>`;
+    });
+    s += `</svg></div><div class="legend" style="margin-top:6px">${Object.entries(lv).map(([k, c]) => `<span><i class="sw" style="background:${c};border-radius:50%"></i>${k}</span>`).join("")}<span>Label: track, pass, frame, bandwidth (MHz), max share of the pilot area covered</span></div>`;
+    $("#timeline").innerHTML = s;
+    table($("#auditTable"), ["Track", "Pass", "Frame", "Bandwidth MHz", "Polarization", "Products", "First", "Last", "Max AOI cover"],
+      S.map((r) => [r.track, r.dir, r.frame, r.bw, r.pol, r.n, r.acq[0].date, r.acq[r.acq.length - 1].date, Math.round(r.max_cov * 100) + "%"]), [0, 2, 5, 8]);
+    const tracks = new Set(S.map((r) => r.track)).size;
+    const first = S.flatMap((r) => r.acq.map((a) => a.date)).sort()[0];
+    const last = S.flatMap((r) => r.acq.map((a) => a.date)).sort().pop();
+    $("#auditLede").textContent = `Query of NASA's Common Metadata Repository on ${AUD.queried} for NISAR Level-2 GCOV products intersecting the pilot area: ${AUD.total_acq} products on ${tracks} tracks and ${S.length} frame stacks, acquired ${nice(first)} – ${nice(last)}. Products from before 17 Jun 2026 are pre-calibration Beta data.`;
+    const nc = D.nisar.slice().sort((p, q) => p.stack.localeCompare(q.stack) || p.date.localeCompare(q.date));
+    table($("#nisarCmp"), ["NISAR date", "Track/frame", "AOI in frame", "Nearest S1", "Agreement", "Water IoU"],
+      nc.map((n) => [n.date, n.stack.replace(/_/g, " ").slice(0, 9), Math.round(n.aoi_valid * 100) + "%", n.s1_date, fmt(n.agreement_vs_s1 * 100, 1) + "%", fmt(n.water_iou_vs_s1, 2)]), [2, 4, 5]);
+  }
+
+  function drawGcov() {
+    table($("#gcovTable"), ["Date", "Release", "Water HH / HV dB", "Land HH / HV dB", "Open water km² (common area of AOI)", "Flooded-veg. km² (Pilot B)", "Nearest S1", "Agreement", "Outside reference areas", "Water IoU", "Granule"],
+      NG.rows.map((r) => [r.date, r.collection === "V1" ? "Validated" : "Provisional", r.classes.water.mean.map((x) => fmt(x, 1)).join(" / "), r.classes.land.mean.map((x) => fmt(x, 1)).join(" / "), fmt(r.per_zone.AOI.water_common, 1), fmt(r.per_zone.B.fveg, 1), r.s1_date, fmt(r.vs_s1.AOI.agreement * 100, 1) + "%", fmt(r.agree_nonref * 100, 1) + "%", fmt(r.vs_s1.AOI.iou, 3), `<span class="mono small">${esc(r.granule || "")}</span>`]), [2, 3, 4, 5, 7, 8, 9]);
+  }
+  function drawValidation() {
+    table($("#valTable"), ["Sentinel-2 date", "Sentinel-1 date", "Gap (days)", "Pixels compared km²", "S1 water km²", "S2 water km²", "Overall agreement", "Water IoU", "Water F1"],
+      D.s2_validation.map((v) => [v.date, v.s1_date, v.gap_days, fmt(v.compared_km2, 0), fmt(v.s1_water_km2, 1), fmt(v.s2_water_km2, 1), fmt(v.overall_agreement * 100, 1) + "%", fmt(v.water_iou, 3), fmt(v.water_f1, 3)]), [2, 3, 4, 5, 6, 7, 8]);
+  }
+
+  function drawKPIs() {
+    const y0 = D.yearly[0], y1 = D.yearly[D.yearly.length - 1];
+    const em = Object.values(D.emergence_km2).reduce((a, b) => a + b, 0);
+    const b0 = D.per_date[y0].B.water, b1 = D.per_date[y1].B.water;
+    const ag = D.s2_validation.map((v) => v.overall_agreement * 100);
+    const tracks = new Set(AUD.stacks.map((r) => r.track)).size;
+    $("#kpis").innerHTML = `
+      <div class="kpi"><div class="v">${AUD.total_acq}<small>products</small></div><div class="k">NISAR L2 GCOV acquisitions over the pilot area on ${tracks} tracks; ${NG.dates.length} processed at 20 m</div><div class="src">NASA CMR · ${AUD.queried}</div></div>
+      <div class="kpi"><div class="v">${fmt(em, 1)}<small>km²</small></div><div class="k">Water in Oct ${y0.slice(0, 4)} that was dry land in Oct ${y1.slice(0, 4)}; ${fmt(em - (D.emergence_km2[y1.slice(0, 4)] || 0), 0)} km² of it stayed dry for 2+ Octobers</div><div class="src">Sentinel-1, orbit 108</div></div>
+      <div class="kpi"><div class="v">${sgn((b1 - b0) / b0 * 100, 0)}<small>%</small></div><div class="k">Open water in Qızılağac Bay (Pilot B), ${fmt(b0, 0)} → ${fmt(b1, 0)} km²</div><div class="src">Oct ${y0.slice(0, 4)} vs Oct ${y1.slice(0, 4)}</div></div>
+      <div class="kpi"><div class="v">${fmt(Math.min(...ag), 0)}–${fmt(Math.max(...ag), 0)}<small>%</small></div><div class="k">Pixel agreement of the radar water map with Sentinel-2 optical water</div><div class="src">${D.s2_validation.length} cloud-free dates, 2017–2026</div></div>`;
+    $("#whyA").innerHTML = `${fmt(em, 1)}<small>km²</small>`;
+    $("#whyB").innerHTML = `${sgn((b1 - b0) / b0 * 100, 0)}<small>%</small>`;
+  }
+  // ---------- NISAR filmstrip ----------
+  function drawFilm() {
+    $("#film").innerHTML = NG.dates.map((d) => `<button type="button" data-d="${d}" aria-label="Open NISAR L-band image of ${nice(d)} on the map"><img src="img/thumb/ngc_${d}.jpg" alt="" loading="lazy" width="240" height="310"><span>${nice(d).replace(/ 2026$/, "")}</span></button>`).join("");
+    $("#film").addEventListener("click", (e) => {
+      const b = e.target.closest("button"); if (!b) return;
+      const d = b.dataset.d, first = NG.dates[0];
+      st.sel.nisar = d === first ? [first, NG.dates[1]] : [first, d];
+      setMode("nisar");
+      $("#explore").scrollIntoView();
+    });
+  }
+
+  // ---------- Controls ----------
+  function fillSelects() {
+    const opts = dateOptions(mode);
+    const [a, b] = st.sel[mode];
+    $("#selA").innerHTML = opts.map((o) => `<option value="${esc(o.v)}"${o.v === a ? " selected" : ""}>${esc(o.t)}</option>`).join("");
+    $("#selB").innerHTML = opts.map((o) => `<option value="${esc(o.v)}"${o.v === b ? " selected" : ""}>${esc(o.t)}</option>`).join("");
+  }
+  // ---------- Time-lapse ----------
+  let playTimer = null, playSaved = null;
+  function playSeq() {
+    if (mode === "change") return D.yearly.filter((d) => d > st.sel.change[0]);
+    if (mode === "radar" || mode === "water") return D.yearly.slice(1);
+    if (mode === "nisar" || mode === "nwater") return NG.dates.slice(1);
+    if (mode === "optical") return D.s2_validation.map((v) => v.date).sort().slice(1);
+    return [];
+  }
+  function stopPlay() {
+    if (playTimer) clearTimeout(playTimer);
+    playTimer = null;
+    const b = $("#play"); b.textContent = "▶ Play time-lapse"; b.setAttribute("aria-pressed", "false");
+    if (playSaved != null) { st.swipe = playSaved; $("#swipe").value = playSaved; playSaved = null; applySwipe(); }
+  }
+  function startPlay() {
+    const seq = playSeq(); if (!seq.length) return;
+    const m = MODES.find((x) => x.id === mode), b = $("#play");
+    b.textContent = "■ Stop"; b.setAttribute("aria-pressed", "true");
+    if (mode !== "change") st.sel[mode][0] = mode === "nisar" || mode === "nwater" ? NG.dates[0] : mode === "optical" ? D.s2_validation.map((v) => v.date).sort()[0] : D.yearly[0];
+    if (m.swipe) { playSaved = st.swipe; st.swipe = 0; $("#swipe").value = 0; }
+    let k = 0;
+    const step = async () => {
+      st.sel[mode][1] = seq[k]; fillSelects(); await render();
+      if (!playTimer) return;
+      k++;
+      playTimer = setTimeout(k < seq.length ? step : stopPlay, k < seq.length ? 1300 : 1800);
+    };
+    playTimer = setTimeout(step, 0);
+  }
+  function setMode(id) {
+    stopPlay();
+    mode = id;
+    document.querySelectorAll("#modes button").forEach((bt) => bt.setAttribute("aria-pressed", String(bt.dataset.m === id)));
+    if (!MODES.find((x) => x.id === id).nodates) fillSelects();
+    try { localStorage.setItem("ce-mode", id); } catch (_) { }
+    render();
+  }
+  function onDate(which) {
+    stopPlay();
+    const v = $(which === 0 ? "#selA" : "#selB").value;
+    const sel = st.sel[mode].slice(); sel[which] = v;
+    if (sel[0] === sel[1]) { const o = dateOptions(mode).map((x) => x.v); const k = o.indexOf(v); sel[1 - which] = o[which === 0 ? Math.min(k + 1, o.length - 1) : Math.max(k - 1, 0)]; }
+    if (sel[0] > sel[1]) sel.reverse();
+    st.sel[mode] = sel;
+    if (["water", "radar"].includes(mode)) st.sel.change = sel.slice();
+    if (mode === "change") { st.sel.water = sel.slice(); st.sel.radar = sel.slice(); }
+    fillSelects(); render();
+  }
+
+  async function boot() {
+    try {
+      [D, AUD, NG] = await Promise.all([fetch("data.json").then((r) => r.json()), fetch("audit.json").then((r) => r.json()), fetch("nisar_gcov.json").then((r) => r.json())]);
+    } catch (e) {
+      $("#ctxCard").innerHTML = `<p>Could not load the data files that ship with this page. Reload to try again.</p>`; return;
+    }
+    for (const m of MODES) if (!m.nodates) st.sel[m.id] = defaults(m.id);
+    $("#modes").innerHTML = MODES.map((m) => `<button type="button" data-m="${m.id}" aria-pressed="false">${m.label}</button>`).join("");
+    $("#modes").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) setMode(b.dataset.m); });
+    $("#selZone").innerHTML = `<option value="AOI">Whole pilot area</option>` + D.zones.map((z) => `<option value="${z.id}">${esc(z.label)} · ${esc(z.name)}</option>`).join("");
+    $("#selZone").value = st.zone;
+    $("#selZone").addEventListener("change", (e) => { st.zone = e.target.value; drawVectors(); updateRail(); drawCharts(); });
+    $("#selA").addEventListener("change", () => onDate(0)); $("#selB").addEventListener("change", () => onDate(1));
+    $("#chkZones").addEventListener("change", (e) => { st.zones = e.target.checked; drawVectors(); });
+    $("#swipe").addEventListener("input", (e) => { st.swipe = +e.target.value; applySwipe(); });
+    $("#play").addEventListener("click", () => (playTimer ? stopPlay() : startPlay()));
+    drawKPIs(); drawFilm(); drawAudit(); drawGcov(); drawValidation(); drawCharts();
+    let m0 = "change"; try { const s = localStorage.getItem("ce-mode"); if (s && MODES.some((x) => x.id === s)) m0 = s; } catch (_) { }
+    applyView(); setMode(m0);
+  }
+  boot();
+})();
+</script>
