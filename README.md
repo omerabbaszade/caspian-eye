@@ -3,7 +3,7 @@
 Radar monitoring of water, wetlands and coastline change on Azerbaijan's Caspian coast, built for the
 2026 NASA International Space Apps Challenge (challenge: *Dancing with the SARs*).
 
-**Live demo:** https://ceye.online · **Demo video (30 s):** https://ceye.online/demo.mp4
+**Live demo:** https://ceye.online · **Video (30 s):** https://ceye.online/video
 
 ## What it does
 - Audits NISAR L2 GCOV coverage over the pilot area (NASA CMR): 115 products on 4 tracks.

@@ -31,7 +31,7 @@ grep -v 'viewport-fit-sides' "$SRC/index.html"
   | grep -vE '^web/img/|^media/.*\.gif$|\.bak|^web/index\.html$' \
   | python3 -c 'import sys, zipfile; z = zipfile.ZipFile(sys.argv[1], "w", zipfile.ZIP_DEFLATED); [z.write(f.strip(), "caspian-eye/" + f.strip()) for f in sys.stdin if f.strip()]; z.write(sys.argv[2], "caspian-eye/web/index.html"); z.close()' "$TMP/caspian-eye-source.zip" "$TMP/index.html" )
 # 30-second demo video (from media/, if present)
-[ -f /root/caspian-eye/media/caspian_eye_demo.mp4 ] && cp /root/caspian-eye/media/caspian_eye_demo.mp4 "$TMP/demo.mp4"
+[ -f /root/caspian-eye/media/caspian_eye_demo.mp4 ] && mkdir -p "$TMP/media" && cp /root/caspian-eye/media/caspian_eye_demo.mp4 "$TMP/media/caspian-eye-kura-delta.mp4"
 mkdir -p "$DST"
 rsync -a --delete "$TMP"/ "$DST"/
 chown -R root:root "$DST"; chmod -R u=rwX,go=rX "$DST"
